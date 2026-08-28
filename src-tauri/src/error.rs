@@ -70,6 +70,24 @@ pub enum TuxError {
         source: std::io::Error,
     },
 
+    #[error("Le processus {pid} n'existe plus")]
+    ProcessGone { pid: u32 },
+
+    #[error("Module « {name} » introuvable dans le processus {pid}")]
+    ModuleNotFound { pid: u32, name: String },
+
+    #[error("Échec de {operation} mémoire à {address:#x} dans le processus {pid} : {source}")]
+    MemoryAccess {
+        pid: u32,
+        address: u64,
+        operation: &'static str,
+        #[source]
+        source: std::io::Error,
+    },
+
+    #[error("Motif d'octets invalide « {pattern} » : {detail}")]
+    PatternInvalid { pattern: String, detail: String },
+
     #[error("{0}")]
     Internal(String),
 }
@@ -109,6 +127,10 @@ impl TuxError {
             TuxError::NoProtonRuntime { .. } => "no_proton_runtime",
             TuxError::AlreadyRunning => "already_running",
             TuxError::Spawn { .. } => "spawn",
+            TuxError::ProcessGone { .. } => "process_gone",
+            TuxError::ModuleNotFound { .. } => "module_not_found",
+            TuxError::MemoryAccess { .. } => "memory_access",
+            TuxError::PatternInvalid { .. } => "pattern_invalid",
             TuxError::Internal(_) => "internal",
         }
     }
@@ -130,6 +152,14 @@ impl TuxError {
             ),
             TuxError::TrainerMissing(_) => {
                 Some("Réimporte le trainer depuis son nouvel emplacement.".into())
+            }
+            TuxError::MemoryAccess { .. } => Some(
+                "Si l'accès est refusé, vérifie kernel.yama.ptrace_scope (0 autorise la lecture \
+                 entre processus d'un même utilisateur)."
+                    .into(),
+            ),
+            TuxError::ProcessGone { .. } => {
+                Some("Le jeu s'est fermé : relance-le avant de réessayer.".into())
             }
             TuxError::NoProtonRuntime { .. } => Some(
                 "Installe Proton (ou Proton-GE) pour ce jeu depuis Steam, ou installe `protontricks`."
