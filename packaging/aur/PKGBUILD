@@ -21,8 +21,8 @@ options=('!lto')  # le LTO est déjà activé dans le profil release du projet
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "archmod.desktop")
 # TODO : remplacer la première somme par la vraie via `updpkgsums`.
-sha256sums=('SKIP'
-            'SKIP')
+sha256sums=('4fbc4e865ca94bdc1ca4a75673b8e24e0ed83fa1377ec71db5f8e91b7986e1c0'
+            'aa4f08d96abdb9a810ee3e517401b94592b9b119da8b1db15ac52a52583adc23')
 
 _srcdir="ArchMod-$pkgver"
 

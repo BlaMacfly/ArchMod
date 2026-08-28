@@ -21,7 +21,7 @@ provides=('archmod')
 conflicts=('archmod')
 source=("$pkgname-$pkgver.deb::$url/releases/download/v$pkgver/${_pkgname}_${pkgver}_amd64.deb")
 # TODO : remplacer par la vraie somme via `updpkgsums` une fois la release publiée.
-sha256sums=('SKIP')
+sha256sums=('9ed4bc60d6733f0bc7e47ce2e0b1cbca2ddc7464ec77960f6e0611a78474bf9e')
 
 package() {
   # Le .deb produit par Tauri contient déjà l'arborescence /usr attendue :

@@ -1,0 +1,7 @@
+# Artefacts de makepkg : jamais versionnés.
+src/
+pkg/
+*.pkg.tar.zst
+*.tar.gz
+*.deb
+*.log
