@@ -70,8 +70,15 @@ pub enum AddressBase {
     Absolute { address: u64 },
     /// `GameAssembly.dll+4194FD4` — résolvable immédiatement.
     Module { module: String, offset: i64 },
-    /// `[player]+184` — dépend d'un symbole créé par un script.
-    Symbol { symbol: String, offset: i64 },
+    /// `player+184` ou `[player]+184` — dépend d'un symbole créé par un script.
+    ///
+    /// Les crochets changent le sens : `[player]` lit le pointeur *rangé à*
+    /// l'adresse du symbole, alors que `player` désigne l'adresse elle-même.
+    Symbol {
+        symbol: String,
+        offset: i64,
+        dereference: bool,
+    },
 }
 
 /// Un scan de motif déclaré par un script : `aobscanmodule(sym,module,motif)`.
@@ -286,6 +293,7 @@ fn parse_address(raw: &str) -> Option<AddressBase> {
         return Some(AddressBase::Symbol {
             symbol: symbol.trim().to_string(),
             offset,
+            dereference: true,
         });
     }
 
@@ -308,6 +316,7 @@ fn parse_address(raw: &str) -> Option<AddressBase> {
         None => Some(AddressBase::Symbol {
             symbol: head.to_string(),
             offset,
+            dereference: false,
         }),
     }
 }
@@ -456,7 +465,8 @@ registersymbol(aska)
             table.entries[1].base,
             Some(AddressBase::Symbol {
                 symbol: "player".into(),
-                offset: 0x190
+                offset: 0x190,
+                dereference: true
             })
         );
         assert_eq!(
@@ -470,6 +480,26 @@ registersymbol(aska)
             parse_address("7FF6A1B2C3D4"),
             Some(AddressBase::Absolute {
                 address: 0x7FF6A1B2C3D4
+            })
+        );
+    }
+
+    #[test]
+    fn distinguishes_bracketed_symbols_from_bare_ones() {
+        assert_eq!(
+            parse_address("[player]+184"),
+            Some(AddressBase::Symbol {
+                symbol: "player".into(),
+                offset: 0x184,
+                dereference: true
+            })
+        );
+        assert_eq!(
+            parse_address("aska+3"),
+            Some(AddressBase::Symbol {
+                symbol: "aska".into(),
+                offset: 3,
+                dereference: false
             })
         );
     }

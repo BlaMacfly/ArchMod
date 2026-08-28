@@ -186,12 +186,23 @@ impl Session {
                 let module = self.module(module)?;
                 Ok(module.base.wrapping_add(*offset as u64))
             }
-            Some(AddressBase::Symbol { symbol, offset }) => {
+            Some(AddressBase::Symbol {
+                symbol,
+                offset,
+                dereference,
+            }) => {
                 let address = self.symbols.get(symbol).copied().ok_or_else(|| {
                     TuxError::SymbolUnresolved {
                         symbol: symbol.clone(),
                     }
                 })?;
+                // `[player]` lit le pointeur rangé à cette adresse ; `player`
+                // désigne l'adresse elle-même.
+                let address = if *dereference {
+                    memory::read_u64(self.pid, address)?
+                } else {
+                    address
+                };
                 Ok(address.wrapping_add(*offset as u64))
             }
             None => Err(TuxError::Internal(format!(
