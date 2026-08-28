@@ -53,7 +53,8 @@ cd ArchMod/packaging/aur-bin && makepkg -si   # binaire, quelques secondes
 cd ../aur && makepkg -si                      # sources, ~10 minutes
 ```
 
-*(Publication sur l'AUR à venir : `archmod` et `archmod-bin`.)*
+Publication sur l'AUR (mainteneur) : [`packaging/publish-aur.sh`](packaging/publish-aur.sh)
+synchronise `PKGBUILD` et `.SRCINFO` vers les dépôts `archmod` et `archmod-bin`.
 
 ### Autres distributions
 
