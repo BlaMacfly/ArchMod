@@ -163,6 +163,17 @@ export default function App() {
     }
   };
 
+  // Un rescan revérifie aussi les dépendances : installer protontricks
+  // pendant que l'app tourne ne doit pas obliger à la redémarrer.
+  const refreshAll = useCallback(async () => {
+    await scan();
+    try {
+      setDependencies(await api.checkDependencies());
+    } catch (caught) {
+      reportError(caught);
+    }
+  }, [scan, reportError]);
+
   const repairConfig = async () => {
     try {
       const backup = await api.repairConfig();
@@ -276,7 +287,7 @@ export default function App() {
           selectedAppId={selectedAppId}
           loading={loading}
           onSelect={setSelectedAppId}
-          onRescan={() => void scan()}
+          onRescan={() => void refreshAll()}
         />
         <MainView
           game={selected}

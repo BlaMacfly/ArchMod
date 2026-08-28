@@ -35,7 +35,7 @@ const FLATPAK_PROTONTRICKS: &str = "com.github.Matoking.protontricks";
 // Journal
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
     Info,
@@ -69,6 +69,22 @@ pub struct LogLine {
     pub level: LogLevel,
     pub app_id: Option<u32>,
     pub message: String,
+}
+
+/// Wine déverse tout son bavardage sur stderr : des centaines de `fixme:`
+/// pendant un lancement parfaitement réussi. Les afficher en rouge donnerait
+/// l'impression d'un échec, on les reclasse donc selon leur nature réelle.
+fn classify(level: LogLevel, line: &str) -> LogLevel {
+    if level != LogLevel::Stderr {
+        return level;
+    }
+    if line.contains("fixme:") {
+        LogLevel::Stdout
+    } else if line.contains(":err:") || line.contains(":warn:") || line.contains("(WARNING)") {
+        LogLevel::Warn
+    } else {
+        LogLevel::Stderr
+    }
 }
 
 pub fn log(app: &AppHandle, app_id: Option<u32>, level: LogLevel, message: impl Into<String>) {
@@ -267,7 +283,12 @@ fn protontricks_plan(game: &SteamGame, trainer: &Path, flatpak: bool) -> LaunchP
         backend: Backend::Protontricks,
         program,
         args,
-        env: vec![("PROTONTRICKS_NO_GUI".into(), "1".into())],
+        env: vec![
+            ("PROTONTRICKS_NO_GUI".into(), "1".into()),
+            // Sans cela, wine émet des centaines de lignes `fixme:` qui noient
+            // les messages utiles dans la console.
+            ("WINEDEBUG".into(), "fixme-all".into()),
+        ],
         working_dir: trainer.parent().map(Path::to_path_buf),
         note: if flatpak {
             "protontricks (Flatpak) exécute le trainer dans le préfixe du jeu.".into()
@@ -618,7 +639,7 @@ where
             match lines.next_line().await {
                 Ok(Some(line)) => {
                     if !line.trim().is_empty() {
-                        log(&app, Some(app_id), level, line);
+                        log(&app, Some(app_id), classify(level, &line), line);
                     }
                 }
                 Ok(None) => break,
