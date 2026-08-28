@@ -1,0 +1,66 @@
+name: Release
+
+# Se déclenche uniquement sur un tag `vX.Y.Z` : la CI habituelle n'est jamais
+# ralentie par la construction des paquets.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Paquets Linux (AppImage, deb, rpm)
+    # ubuntu-latest lie l'AppImage à la glibc du runner : suffisant pour les
+    # distributions récentes (Arch, CachyOS, Fedora, Ubuntu à jour).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dépendances système
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            libxdo-dev libssl-dev patchelf build-essential curl wget file \
+            rpm fakeroot
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: ArchMod ${{ github.ref_name }}
+          releaseBody: |
+            ## Installation
+
+            **AppImage** — fonctionne sur toute distribution récente :
+            ```bash
+            chmod +x ArchMod_*.AppImage && ./ArchMod_*.AppImage
+            ```
+
+            **Arch / CachyOS** — pour l'injection via la méthode de référence :
+            ```bash
+            sudo pacman -S --needed protontricks wine
+            ```
+
+            Les modifications de cette version sont listées ci-dessous.
+          # Publication en brouillon : tu relis et tu publies depuis GitHub.
+          releaseDraft: true
+          prerelease: false

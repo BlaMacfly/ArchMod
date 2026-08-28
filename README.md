@@ -52,6 +52,13 @@ Binaire optimisé (et paquets `.deb` / `.rpm` / AppImage) :
 npm run tauri build
 ```
 
+Les paquets sont aussi construits automatiquement à chaque tag `vX.Y.Z` et
+déposés sur la [page des releases](https://github.com/BlaMacfly/ArchMod/releases) :
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
 ## Comment l'injection fonctionne
 
 ArchMod choisit un backend, dans cet ordre en mode **Automatique** :
