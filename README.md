@@ -40,6 +40,29 @@
 ./install_deps.sh --check  # vérifie sans rien toucher
 ```
 
+## Installer
+
+### Arch Linux / CachyOS
+
+Les recettes `PKGBUILD` vivent dans [packaging/](packaging/) — l'une compile
+depuis les sources, l'autre réempaquette le binaire officiel :
+
+```bash
+git clone https://github.com/BlaMacfly/ArchMod
+cd ArchMod/packaging/aur-bin && makepkg -si   # binaire, quelques secondes
+cd ../aur && makepkg -si                      # sources, ~10 minutes
+```
+
+*(Publication sur l'AUR à venir : `archmod` et `archmod-bin`.)*
+
+### Autres distributions
+
+AppImage, `.deb` et `.rpm` sur la [page des releases](https://github.com/BlaMacfly/ArchMod/releases) :
+
+```bash
+chmod +x ArchMod_*.AppImage && ./ArchMod_*.AppImage
+```
+
 ## Démarrer
 
 ```bash

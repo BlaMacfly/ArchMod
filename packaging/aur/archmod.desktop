@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ArchMod
+GenericName=Gestionnaire de trainers
+Comment=Injecte des trainers Windows dans les préfixes Proton de tes jeux Steam
+Exec=archmod
+Icon=archmod
+Terminal=false
+Categories=Game;Utility;
+Keywords=steam;proton;wine;trainer;cheat;
+StartupWMClass=ArchMod

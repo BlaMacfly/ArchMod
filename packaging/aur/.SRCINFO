@@ -1,0 +1,27 @@
+pkgbase = archmod
+	pkgdesc = Gestionnaire graphique de trainers pour jeux Steam sous Proton
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/BlaMacfly/ArchMod
+	arch = x86_64
+	license = MIT
+	makedepends = rust
+	makedepends = cargo
+	makedepends = nodejs
+	makedepends = npm
+	makedepends = pkgconf
+	depends = webkit2gtk-4.1
+	depends = gtk3
+	depends = libappindicator-gtk3
+	depends = librsvg
+	depends = hicolor-icon-theme
+	optdepends = protontricks: méthode d'injection de référence
+	optdepends = wine: repli lorsque protontricks est absent
+	optdepends = steam: bibliothèque de jeux à scanner
+	options = !lto
+	source = archmod-0.1.0.tar.gz::https://github.com/BlaMacfly/ArchMod/archive/refs/tags/v0.1.0.tar.gz
+	source = archmod.desktop
+	sha256sums = SKIP
+	sha256sums = SKIP
+
+pkgname = archmod

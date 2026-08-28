@@ -1,0 +1,61 @@
+# Maintainer: BlaMacfly <expedycam@gmail.com>
+#
+# Paquet source : compile ArchMod depuis le tag publié sur GitHub.
+# Pour une installation sans toolchain, voir le paquet `archmod-bin`.
+
+pkgname=archmod
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Gestionnaire graphique de trainers pour jeux Steam sous Proton"
+arch=('x86_64')
+url="https://github.com/BlaMacfly/ArchMod"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libappindicator-gtk3' 'librsvg' 'hicolor-icon-theme')
+makedepends=('rust' 'cargo' 'nodejs' 'npm' 'pkgconf')
+optdepends=(
+  'protontricks: méthode d'"'"'injection de référence'
+  'wine: repli lorsque protontricks est absent'
+  'steam: bibliothèque de jeux à scanner'
+)
+options=('!lto')  # le LTO est déjà activé dans le profil release du projet
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+        "archmod.desktop")
+# TODO : remplacer la première somme par la vraie via `updpkgsums`.
+sha256sums=('SKIP'
+            'SKIP')
+
+_srcdir="ArchMod-$pkgver"
+
+prepare() {
+  cd "$_srcdir"
+  # `npm ci` respecte strictement package-lock.json : build reproductible.
+  npm ci
+}
+
+build() {
+  cd "$_srcdir"
+  # --no-bundle : pacman se charge de l'empaquetage, pas besoin de deb/rpm.
+  npm run tauri build -- --no-bundle
+}
+
+check() {
+  cd "$_srcdir/src-tauri"
+  cargo test --release --locked
+}
+
+package() {
+  cd "$_srcdir"
+
+  install -Dm755 "src-tauri/target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 "$srcdir/archmod.desktop" \
+    "$pkgdir/usr/share/applications/$pkgname.desktop"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+
+  for size in 32 128; do
+    install -Dm644 "src-tauri/icons/${size}x${size}.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/$pkgname.png"
+  done
+  install -Dm644 "src-tauri/icons/icon.png" \
+    "$pkgdir/usr/share/icons/hicolor/512x512/apps/$pkgname.png"
+}

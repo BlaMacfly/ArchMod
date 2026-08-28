@@ -1,0 +1,33 @@
+# Maintainer: BlaMacfly <expedycam@gmail.com>
+#
+# Paquet binaire : réempaquette le .deb officiel de la release GitHub.
+# Installation en quelques secondes, sans Rust ni Node.
+
+pkgname=archmod-bin
+_pkgname=ArchMod
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Gestionnaire graphique de trainers pour jeux Steam sous Proton (binaire officiel)"
+arch=('x86_64')
+url="https://github.com/BlaMacfly/ArchMod"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libappindicator-gtk3' 'librsvg' 'hicolor-icon-theme')
+optdepends=(
+  'protontricks: méthode d'"'"'injection de référence'
+  'wine: repli lorsque protontricks est absent'
+  'steam: bibliothèque de jeux à scanner'
+)
+provides=('archmod')
+conflicts=('archmod')
+source=("$pkgname-$pkgver.deb::$url/releases/download/v$pkgver/${_pkgname}_${pkgver}_amd64.deb")
+# TODO : remplacer par la vraie somme via `updpkgsums` une fois la release publiée.
+sha256sums=('SKIP')
+
+package() {
+  # Le .deb produit par Tauri contient déjà l'arborescence /usr attendue :
+  # binaire, fichier .desktop et icônes hicolor.
+  bsdtar -xf data.tar.* -C "$pkgdir"
+
+  install -Dm644 "$pkgdir/usr/share/doc/$_pkgname/LICENSE" \
+    "$pkgdir/usr/share/licenses/archmod/LICENSE" 2>/dev/null || true
+}
