@@ -8,6 +8,7 @@ mod banners;
 pub mod cheat_table;
 pub mod engine;
 mod error;
+pub mod hook;
 mod injector;
 /// Exposé pour les outils de diagnostic (`cargo run --example ...`).
 pub mod memory;

@@ -82,7 +82,10 @@ fn main() {
             _ => match session.read(entry) {
                 Ok(value) => {
                     let address = session.resolve(entry).expect("adresse déjà résolue");
-                    println!("  [OK]      {} = {value:?} @ {address:#x}", entry.description)
+                    println!(
+                        "  [OK]      {} = {value:?} @ {address:#x}",
+                        entry.description
+                    )
                 }
                 Err(error) => println!("  [échec]   {} : {error}", entry.description),
             },
