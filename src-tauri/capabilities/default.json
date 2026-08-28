@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissions de la fenêtre principale de ArchMod",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "opener:allow-reveal-item-in-dir",
+    "dialog:allow-open",
+    "dialog:allow-message",
+    "dialog:allow-confirm"
+  ]
+}

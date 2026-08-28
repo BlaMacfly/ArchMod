@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* Palette « gaming » sombre : bleus profonds froids + accent violet/indigo. */
+@theme {
+  --color-ink-950: #07080d;
+  --color-ink-900: #0b0d14;
+  --color-ink-850: #0f111a;
+  --color-ink-800: #13161f;
+  --color-ink-700: #1a1e2b;
+  --color-ink-600: #252a3a;
+  --color-ink-500: #333a4f;
+
+  --color-mist-500: #6c7391;
+  --color-mist-400: #8a90a6;
+  --color-mist-300: #a9afc4;
+  --color-mist-100: #e8eaf2;
+
+  --color-brand-700: #0369a1;
+  --color-brand-600: #0284c7;
+  --color-brand-500: #22b8f5;
+  --color-brand-400: #7dd3fc;
+  --color-spark-600: #1d4ed8;
+  --color-spark-500: #2563eb;
+
+  --color-live-500: #34d399;
+  --color-live-600: #10b981;
+  --color-halt-500: #f87171;
+  --color-warn-500: #fbbf24;
+
+  --font-sans: "Inter", "Noto Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrainsMono Nerd Font", "JetBrains Mono", "Fira Code",
+    ui-monospace, SFMono-Regular, monospace;
+
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-ink-950);
+    color: var(--color-mist-100);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    /* Le glisser-déposer du webview ne doit pas « décoller » l'interface. */
+    overscroll-behavior: none;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-brand-500) 45%, transparent);
+  }
+}
+
+@layer components {
+  /* Barre de défilement discrète, cohérente avec le thème sombre. */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-600) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink-600);
+    border-radius: 9999px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-ink-500);
+  }
+  .scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@keyframes tux-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-live-500) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes tux-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-pulse-ring {
+  animation: tux-pulse-ring 2s ease-out infinite;
+}
+
+.animate-fade-up {
+  animation: tux-fade-up 0.28s ease-out both;
+}
