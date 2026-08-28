@@ -188,17 +188,29 @@ pub fn read_u64(pid: u32, address: u64) -> Result<u64> {
     Ok(u64::from_le_bytes(buffer))
 }
 
-/// Suit une chaîne de pointeurs façon Cheat Engine : `[[base]+18]+C0`.
-pub fn resolve_chain(pid: u32, base: u64, offsets: &[u64]) -> Result<u64> {
+/// Suit une chaîne de pointeurs selon la convention de Cheat Engine.
+///
+/// Dans un fichier `.CT`, les décalages sont stockés dans l'ordre inverse de
+/// leur application : le premier de la liste est le plus externe. Une entrée
+/// portant les décalages `[C0, 18]` sur la base `B` désigne donc l'adresse
+/// `[[B]+18]+C0`, chaque crochet étant une lecture de pointeur.
+///
+/// La lecture est confiée à `read_pointer`, ce qui rend la logique testable
+/// sans processus cible.
+pub fn resolve_pointer<R>(read_pointer: R, base: u64, offsets: &[i64]) -> Result<u64>
+where
+    R: Fn(u64) -> Result<u64>,
+{
     let mut address = base;
-    for (index, offset) in offsets.iter().enumerate() {
-        // Le dernier décalage désigne la valeur elle-même : on ne déréférence pas.
-        if index + 1 == offsets.len() {
-            return Ok(address.wrapping_add(*offset));
-        }
-        address = read_u64(pid, address)?.wrapping_add(*offset);
+    for offset in offsets.iter().rev() {
+        address = read_pointer(address)?.wrapping_add(*offset as u64);
     }
     Ok(address)
+}
+
+/// Variante appliquée à un processus réel.
+pub fn resolve_pointer_in(pid: u32, base: u64, offsets: &[i64]) -> Result<u64> {
+    resolve_pointer(|address| read_u64(pid, address), base, offsets)
 }
 
 /// Localise un module PE et déduit sa taille de l'en-tête chargé en mémoire.
@@ -486,11 +498,32 @@ mod tests {
     }
 
     #[test]
-    fn resolves_a_pointer_chain_on_our_own_process() {
-        // Une chaîne d'un seul décalage ne déréférence rien : elle doit rendre
-        // base + offset, ce qui se vérifie sans processus tiers.
-        let pid = std::process::id();
-        assert_eq!(resolve_chain(pid, 0x1000, &[0x18]).expect("chaîne"), 0x1018);
+    fn follows_pointer_chains_the_way_cheat_engine_does() {
+        // Mémoire simulée : 0x1000 -> 0x2000, 0x2018 -> 0x3000.
+        let read = |address: u64| -> Result<u64> {
+            Ok(match address {
+                0x1000 => 0x2000,
+                0x2018 => 0x3000,
+                _ => 0,
+            })
+        };
+        // Décalages [C0, 18] : le premier du fichier est le plus externe,
+        // donc l'adresse visée est [[0x1000]+18]+C0 = 0x30C0.
+        assert_eq!(
+            resolve_pointer(read, 0x1000, &[0xC0, 0x18]).expect("chaîne"),
+            0x30C0
+        );
+        // Sans décalage, la base est déjà l'adresse.
+        assert_eq!(resolve_pointer(read, 0x4242, &[]).expect("chaîne"), 0x4242);
+    }
+
+    #[test]
+    fn handles_negative_offsets() {
+        let read = |_: u64| -> Result<u64> { Ok(0x2000) };
+        assert_eq!(
+            resolve_pointer(read, 0x1000, &[-0x10]).expect("chaîne"),
+            0x1FF0
+        );
     }
 
     #[test]

@@ -113,6 +113,9 @@ src-tauri/src/
 ├── vault.rs           config.json : association AppID → trainer, écriture atomique
 ├── proton.rs          résolution de la distribution Proton d'un jeu
 ├── injector.rs        plans de lancement, exécution asynchrone, streaming des logs, arrêt
+├── memory.rs          lecture/écriture mémoire du jeu, recherche de motifs (AOB)
+├── cheat_table.rs     parseur des tables Cheat Engine (.CT)
+├── engine.rs          résolution des options, lecture/écriture de valeurs, gel
 └── lib.rs             état partagé et commandes Tauri
 
 src/
@@ -122,6 +125,30 @@ src/
 ```
 
 Aucun `.unwrap()` sur des données externes : toutes les erreurs remontent en `Result<T, TuxError>` et l'interface affiche le message **et** l'action corrective (installer un paquet, réparer la configuration, lancer le jeu d'abord…).
+
+## Moteur d'options natif (en cours)
+
+Au-delà du lancement de trainers, ArchMod sait lire et écrire directement la
+mémoire d'un jeu Proton, sans Wine ni Cheat Engine — un jeu lancé par Steam
+reste un processus Linux ordinaire, et `process_vm_readv` suffit.
+
+Fait notable : pressure-vessel place les jeux dans un **espace de noms
+utilisateur enfant** dont ton compte est propriétaire. Tu y détiens donc
+`CAP_SYS_PTRACE`, et la restriction `kernel.yama.ptrace_scope` ne s'applique
+pas — aucun réglage système à modifier.
+
+| Brique | État |
+|---|---|
+| Lecture/écriture mémoire, résolution des modules PE | fait |
+| Recherche de motifs `aobscanmodule` | fait — 102 Mo balayés en ~110 ms |
+| Parseur de tables `.CT` | fait |
+| Résolution des adresses, chaînes de pointeurs, gel des valeurs | fait |
+| Auto-assembleur (scripts `[ENABLE]`, injection de code) | à faire |
+
+Sans auto-assembleur, seules les entrées dont l'adresse repose sur un module ou
+sur un symbole issu d'un scan sont exploitables. Les tables modernes s'appuient
+largement sur des scripts : ArchMod les identifie et le dit, plutôt que
+d'échouer en silence.
 
 ## Configuration
 

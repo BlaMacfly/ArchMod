@@ -88,6 +88,12 @@ pub enum TuxError {
     #[error("Motif d'octets invalide « {pattern} » : {detail}")]
     PatternInvalid { pattern: String, detail: String },
 
+    #[error("Symbole « {symbol} » non résolu : il est produit par un script d'auto-assembleur")]
+    SymbolUnresolved { symbol: String },
+
+    #[error("Table Cheat Engine illisible : {detail}")]
+    CheatTable { detail: String },
+
     #[error("{0}")]
     Internal(String),
 }
@@ -131,6 +137,8 @@ impl TuxError {
             TuxError::ModuleNotFound { .. } => "module_not_found",
             TuxError::MemoryAccess { .. } => "memory_access",
             TuxError::PatternInvalid { .. } => "pattern_invalid",
+            TuxError::SymbolUnresolved { .. } => "symbol_unresolved",
+            TuxError::CheatTable { .. } => "cheat_table",
             TuxError::Internal(_) => "internal",
         }
     }

@@ -5,6 +5,8 @@
 //! l'orchestration, de l'état partagé et de la conversion des erreurs.
 
 mod banners;
+pub mod cheat_table;
+pub mod engine;
 mod error;
 mod injector;
 /// Exposé pour les outils de diagnostic (`cargo run --example ...`).
