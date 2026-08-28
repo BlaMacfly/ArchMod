@@ -76,6 +76,12 @@ Binaire optimisé (et paquets `.deb` / `.rpm` / AppImage) :
 npm run tauri build
 ```
 
+> ⚠️ **Toujours passer par `tauri build`, jamais par `cargo build --release` seul.**
+> Sans les variables d'environnement posées par le CLI Tauri, le binaire produit
+> reste en mode développement : il cherche le serveur Vite sur
+> `http://localhost:1420` et n'affiche qu'une fenêtre noire. Pour le binaire seul,
+> sans paquets : `npm run tauri build -- --no-bundle`.
+
 Les paquets sont aussi construits automatiquement à chaque tag `vX.Y.Z` et
 déposés sur la [page des releases](https://github.com/BlaMacfly/ArchMod/releases) :
 

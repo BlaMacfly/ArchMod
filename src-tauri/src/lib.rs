@@ -135,8 +135,18 @@ struct StatusUpdate {
 
 #[tauri::command]
 async fn scan_library(state: State<'_, AppState>) -> Result<LibrarySnapshot> {
+    let started = std::time::Instant::now();
     let games = steam_scanner::scan_games()?;
     let roots = steam_scanner::steam_roots()?;
+    eprintln!(
+        "[archmod] scan : {} jeu(x) dans {} racine(s) en {} ms",
+        games.len(),
+        roots.len(),
+        started.elapsed().as_millis()
+    );
+    for root in &roots {
+        eprintln!("[archmod]   racine Steam : {}", root.display());
+    }
     let running = injector::scan_running(&games);
     let launched = state.registry.snapshot().await;
 
@@ -241,6 +251,10 @@ async fn set_trainer(
     let mut vault = state.vault.lock().await;
     let entry = vault.set_trainer(app_id, &path)?;
     AppState::persist(&vault)?;
+    eprintln!(
+        "[archmod] trainer associé au jeu {app_id} : {}",
+        entry.path.display()
+    );
     Ok(entry)
 }
 
@@ -326,7 +340,20 @@ async fn running_trainers(state: State<'_, AppState>) -> Result<Vec<RunningTrain
 
 #[tauri::command]
 async fn check_dependencies(state: State<'_, AppState>) -> Result<Dependencies> {
-    Ok(state.deps(true).await)
+    let deps = state.deps(true).await;
+    eprintln!(
+        "[archmod] dépendances : protontricks={} flatpak={} wine={}",
+        deps.protontricks
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "absent".into()),
+        deps.protontricks_flatpak,
+        deps.wine
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "absent".into())
+    );
+    Ok(deps)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -350,6 +377,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            eprintln!(
+                "[archmod] ArchMod {} — configuration : {}",
+                env!("CARGO_PKG_VERSION"),
+                vault::config_path()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|e| e.to_string())
+            );
             app.manage(AppState::new());
             // Autorise explicitement le cache de visuels pour le protocole
             // `asset:`, sans dépendre de l'expansion de $HOME dans

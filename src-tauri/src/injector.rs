@@ -47,6 +47,21 @@ pub enum LogLevel {
     Success,
 }
 
+impl LogLevel {
+    /// Étiquette courte, identique à celle affichée dans la console interne.
+    pub fn tag(self) -> &'static str {
+        match self {
+            LogLevel::Info => "INFO",
+            LogLevel::Command => "CMD ",
+            LogLevel::Stdout => "OUT ",
+            LogLevel::Stderr => "ERR ",
+            LogLevel::Warn => "WARN",
+            LogLevel::Error => "FAIL",
+            LogLevel::Success => " OK ",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogLine {
@@ -63,6 +78,16 @@ pub fn log(app: &AppHandle, app_id: Option<u32>, level: LogLevel, message: impl 
         app_id,
         message: message.into(),
     };
+
+    // Miroir sur la sortie d'erreur : un `archmod > log 2>&1` capture ainsi la
+    // même chose que la console de l'interface, diagnostics compris.
+    eprintln!(
+        "{} {} {}{}",
+        chrono::Local::now().format("%H:%M:%S%.3f"),
+        level.tag(),
+        line.app_id.map(|id| format!("[{id}] ")).unwrap_or_default(),
+        line.message
+    );
     // Un échec d'émission (fenêtre fermée) ne doit pas interrompre le lancement.
     if let Err(err) = app.emit(EVENT_LOG, &line) {
         eprintln!("[archmod] émission du log impossible : {err}");
