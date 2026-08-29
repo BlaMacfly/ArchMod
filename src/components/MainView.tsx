@@ -13,6 +13,9 @@ import {
 import logoUrl from "../assets/logo.png";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { StatusPill } from "./StatusPill";
+import { TrainerPanel } from "./TrainerPanel";
+import { Workshop } from "./Workshop";
+import { useTrainer } from "../hooks/useTrainer";
 import { useBanner } from "../hooks/useBanner";
 import { api, formatCommand, toTuxError } from "../lib/api";
 import { accentFromAppId, basename, formatBytes, formatRelative } from "../lib/format";
@@ -46,6 +49,14 @@ export function MainView({
 
   const [command, setCommand] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [tab, setTab] = useState<Onglet>("lanceur");
+
+  const trainer = useTrainer(
+    game?.appId ?? null,
+    game?.name ?? "",
+    game?.buildId ?? null,
+    (error) => onNotice(toTuxError(error).message),
+  );
 
   // Prévisualisation de la commande : purement informative, elle ne doit
   // jamais empêcher l'affichage de la fiche du jeu.
@@ -186,6 +197,41 @@ export function MainView({
           )}
         </div>
 
+        {/* Onglets */}
+        <div className="flex gap-1 rounded-lg bg-ink-850 p-1">
+          {ONGLETS.map(([value, label, hint]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTab(value)}
+              title={hint}
+              className={[
+                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                tab === value
+                  ? "bg-brand-500/20 text-brand-400"
+                  : "text-mist-400 hover:bg-white/5 hover:text-mist-100",
+              ].join(" ")}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "panneau" && (
+          <PanneauSection game={game} trainer={trainer} onNotice={onNotice} />
+        )}
+
+        {tab === "atelier" && trainer.draft && (
+          <Workshop
+            game={game}
+            profile={trainer.draft}
+            onProfileChange={trainer.setDraft}
+            onNotice={onNotice}
+          />
+        )}
+
+        {tab === "lanceur" && (
+          <>
         {/* Carte trainer */}
         <div className="rounded-card border border-ink-700 bg-ink-850 p-5">
           <div className="flex items-start justify-between gap-4">
@@ -305,6 +351,8 @@ export function MainView({
             />
           </div>
         </details>
+          </>
+        )}
       </div>
     </section>
   );
@@ -341,6 +389,120 @@ function Row({ label, value, mono, onCopy }: RowProps) {
           <Copy className="h-3.5 w-3.5" />
         </button>
       )}
+    </div>
+  );
+}
+
+type Onglet = "lanceur" | "panneau" | "atelier";
+
+const ONGLETS: [Onglet, string, string][] = [
+  ["lanceur", "Lanceur", "Lancer un trainer Windows dans le préfixe Proton"],
+  ["panneau", "Panneau", "Activer les options d'un profil communautaire"],
+  ["atelier", "Atelier", "Créer un profil : éprouver une adresse et l'enregistrer"],
+];
+
+interface PanneauSectionProps {
+  game: GameView;
+  trainer: ReturnType<typeof useTrainer>;
+  onNotice: (message: string) => void;
+}
+
+/** Choix du profil, puis panneau d'options une fois celui-ci chargé. */
+function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
+  const { entries, active, report, busy } = trainer;
+
+  if (!game.running) {
+    return (
+      <div className="rounded-card border border-warn-500/30 bg-warn-500/10 px-5 py-4 text-sm text-warn-500">
+        Lance le jeu depuis Steam : les adresses n'existent que pendant son
+        exécution.
+      </div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-card border border-ink-700 bg-ink-850 px-5 py-8 text-center">
+        <p className="text-sm text-mist-300">
+          Aucun profil installé pour « {game.name} ».
+        </p>
+        <p className="mx-auto mt-2 max-w-md text-xs text-mist-500">
+          Un profil décrit les options du jeu et où trouver leurs valeurs en
+          mémoire. Récupère-en un dans le dépôt communautaire, ou crée le tien
+          depuis l'onglet Atelier.
+        </p>
+      </div>
+    );
+  }
+
+  if (!active || !report) {
+    return (
+      <ul className="space-y-2">
+        {entries.map(({ profile, buildMatch }) => (
+          <li
+            key={`${profile.buildId}-${profile.options.length}`}
+            className="flex items-center gap-4 rounded-card border border-ink-700 bg-ink-850 px-5 py-4"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-mist-100">
+                {profile.game} — {profile.options.length} option(s)
+              </p>
+              <p className="mt-0.5 text-xs text-mist-500">
+                {profile.author ? `par ${profile.author} · ` : ""}
+                build {profile.buildId ?? "non précisé"}
+              </p>
+              {buildMatch.state === "outdated" && (
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-warn-500">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Écrit pour le build {buildMatch.detail.profile}, tu es sur{" "}
+                  {buildMatch.detail.installed} — des adresses peuvent avoir bougé.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              disabled={busy === "profil"}
+              onClick={() => void trainer.activate(profile)}
+              className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 hover:text-ink-950 disabled:opacity-50"
+            >
+              {busy === "profil" ? "Chargement…" : "Charger"}
+            </button>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3 rounded-card border border-ink-700 bg-ink-850 px-5 py-3">
+        <span className="min-w-0 flex-1 text-sm text-mist-300">
+          {report.resolved} option(s) prête(s)
+          {report.failed > 0 && (
+            <span className="text-warn-500"> · {report.failed} en échec</span>
+          )}
+          <span className="text-mist-500"> · PID {report.pid}</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            void trainer.deactivate();
+            onNotice("Profil déchargé, les gels sont levés.");
+          }}
+          className="shrink-0 rounded-lg border border-ink-600 px-3 py-1.5 text-xs text-mist-300 transition-colors hover:bg-white/5"
+        >
+          Décharger
+        </button>
+      </div>
+
+      <TrainerPanel
+        profile={active}
+        report={report}
+        busy={busy}
+        debug
+        onSet={trainer.setOption}
+        onClear={trainer.clearOption}
+      />
     </div>
   );
 }

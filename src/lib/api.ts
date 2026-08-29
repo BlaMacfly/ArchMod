@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  ActivationReport,
+  AddressRecipe,
   AppPaths,
   BannerKind,
   Dependencies,
@@ -9,11 +11,18 @@ import type {
   LibrarySnapshot,
   LogLine,
   RunningTrainer,
+  OptionStatus,
+  PrefixComponent,
+  PrefixReport,
+  Profile,
+  ProfileEntry,
   Settings,
   StatusUpdate,
   TrainerEntry,
   TrainerStateEvent,
   TuxError,
+  Value,
+  ValueTypeRef,
 } from "./types";
 
 export const EVENT_LOG = "archmod://log";
@@ -66,7 +75,55 @@ export const api = {
   runningTrainers: () => call<RunningTrainer[]>("running_trainers"),
   checkDependencies: () => call<Dependencies>("check_dependencies"),
   appPaths: () => call<AppPaths>("app_paths"),
+
+  // Préparation du préfixe
+  inspectPrefix: (appId: number) => call<PrefixReport>("inspect_prefix", { appId }),
+  installComponent: (appId: number, component: PrefixComponent) =>
+    call<boolean>("install_component", { appId, component }),
+
+  // Profils de trainer
+  profilesForGame: (appId: number) =>
+    call<ProfileEntry[]>("profiles_for_game", { appId }),
+  activateProfile: (appId: number, profile: Profile) =>
+    call<ActivationReport>("activate_profile", { appId, profile }),
+  trainerReport: (appId: number) =>
+    call<ActivationReport | null>("trainer_report", { appId }),
+  setOption: (appId: number, optionId: string, value?: Value) =>
+    call<OptionStatus>("set_option", { appId, optionId, value: value ?? null }),
+  clearOption: (appId: number, optionId: string) =>
+    call<boolean>("clear_option", { appId, optionId }),
+  deactivateProfile: (appId: number) =>
+    call<boolean>("deactivate_profile", { appId }),
+  probeRecipe: (appId: number, recipe: AddressRecipe, valueType: ValueTypeRef) =>
+    call<OptionStatus>("probe_recipe", { appId, recipe, valueType }),
+  saveProfile: (profile: Profile) => call<string>("save_profile", { profile }),
+  importProfile: (path: string) => call<Profile>("import_profile", { path }),
 };
+
+/** Nombre porté par une valeur typée, quel que soit son type. */
+export function valueNumber(value: Value | null): number | null {
+  return value ? value.value : null;
+}
+
+/** Fabrique une valeur du type attendu par une option. */
+export function makeValue(kind: ValueTypeRef["kind"], number: number): Value | null {
+  switch (kind) {
+    case "byte":
+    case "twoBytes":
+    case "fourBytes":
+    case "eightBytes":
+    case "float":
+    case "double":
+      return { type: kind, value: number } as Value;
+    default:
+      return null;
+  }
+}
+
+/** Adresse en hexadécimal, telle qu'on l'écrit dans un éditeur mémoire. */
+export function formatAddress(address: number | null): string {
+  return address === null ? "—" : `0x${address.toString(16).toUpperCase()}`;
+}
 
 export function onLog(handler: (line: LogLine) => void): Promise<UnlistenFn> {
   return listen<LogLine>(EVENT_LOG, (event) => handler(event.payload));
