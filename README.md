@@ -176,6 +176,27 @@ d'échouer en silence.
 
 Un fichier corrompu n'est **jamais** écrasé en silence : l'interface propose une réparation qui met l'ancien fichier de côté sous `config.corrupted-<date>.json`.
 
+## Faire fonctionner un trainer sous Proton
+
+Un trainer n'est pas une application ordinaire : la plupart sont écrits en .NET
+et doivent s'attacher au processus d'un autre programme. Trois obstacles
+reviennent systématiquement, et ArchMod les diagnostique désormais lui-même.
+
+| Obstacle | Pourquoi | Correctif |
+|---|---|---|
+| **Wine-Mono au lieu de .NET** | Proton substitue Wine-Mono à .NET ; les trainers récents ne démarrent pas dessus | `protontricks -q <AppID> dotnet48` (ou `dotnet40` pour les plus anciens) |
+| **Proton standard** | GE-Proton est plus permissif pour les modifications mémoire | Choisir GE-Proton dans les propriétés du jeu |
+| **ESYNC / FSYNC** | Les synchronisations rapides gênent l'attachement au processus | `PROTON_NO_ESYNC=1 PROTON_NO_FSYNC=1 %command%` — ArchMod le pose déjà pour le trainer |
+| **Préfixe en Windows XP/Vista** | Un correctif de jeu a pu abaisser la version déclarée ; .NET récent la refuse | `protontricks <AppID> win10` |
+
+Le diagnostic complet d'un préfixe est exposé par la commande `inspect_prefix`,
+et l'installation d'un composant par `install_component`.
+
+⚠️ **Les trainers de WeMod ne sont pas distribués séparément** : ce sont des
+fichiers chiffrés qui ne s'exécutent que dans son client Windows, lequel exige un
+compte. Utilise une source autonome — FLiNG, MrAntiFun, les trainers gratuits de
+Cheat Happens — ou une table Cheat Engine.
+
 ## Dépannage
 
 | Symptôme | Cause probable |

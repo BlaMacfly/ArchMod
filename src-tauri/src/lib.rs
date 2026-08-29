@@ -12,6 +12,7 @@ pub mod hook;
 mod injector;
 /// Exposé pour les outils de diagnostic (`cargo run --example ...`).
 pub mod memory;
+mod prefix;
 mod proton;
 mod steam_scanner;
 mod vault;
@@ -27,6 +28,7 @@ use tokio::sync::Mutex;
 use banners::BannerKind;
 use error::{ErrorReport, Result};
 use injector::{Dependencies, LaunchOutcome, LaunchPlan, RunningTrainer, TrainerRegistry};
+use prefix::{Component, PrefixReport};
 use steam_scanner::SteamGame;
 use vault::{Settings, TrainerEntry, Vault};
 
@@ -343,6 +345,26 @@ async fn running_trainers(state: State<'_, AppState>) -> Result<Vec<RunningTrain
     Ok(state.registry.snapshot().await)
 }
 
+/// Diagnostic du préfixe : ce qui manque pour qu'un trainer démarre.
+#[tauri::command]
+async fn inspect_prefix(state: State<'_, AppState>, app_id: u32) -> Result<PrefixReport> {
+    let game = state.game(app_id).await?;
+    prefix::inspect(&game)
+}
+
+/// Installe un composant manquant (le plus souvent .NET) dans le préfixe.
+#[tauri::command]
+async fn install_component(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+    component: Component,
+) -> Result<bool> {
+    let game = state.game(app_id).await?;
+    let deps = state.deps(false).await;
+    injector::install_component(&app, &game, component, &deps).await
+}
+
 #[tauri::command]
 async fn check_dependencies(state: State<'_, AppState>) -> Result<Dependencies> {
     let deps = state.deps(true).await;
@@ -418,6 +440,8 @@ pub fn run() {
             stop_trainer,
             running_trainers,
             check_dependencies,
+            inspect_prefix,
+            install_component,
             app_paths,
         ])
         .run(tauri::generate_context!())

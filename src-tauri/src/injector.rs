@@ -288,6 +288,10 @@ fn protontricks_plan(game: &SteamGame, trainer: &Path, flatpak: bool) -> LaunchP
             // Sans cela, wine émet des centaines de lignes `fixme:` qui noient
             // les messages utiles dans la console.
             ("WINEDEBUG".into(), "fixme-all".into()),
+            // Les mécanismes de synchronisation rapide de Proton empêchent
+            // fréquemment un trainer de s'attacher au processus du jeu.
+            ("PROTON_NO_ESYNC".into(), "1".into()),
+            ("PROTON_NO_FSYNC".into(), "1".into()),
         ],
         working_dir: trainer.parent().map(Path::to_path_buf),
         note: if flatpak {
@@ -655,6 +659,103 @@ where
             }
         }
     });
+}
+
+/// Installe un composant dans le préfixe d'un jeu via protontricks.
+///
+/// L'opération dure plusieurs minutes — winetricks télécharge puis exécute un
+/// installeur Windows — d'où la diffusion de la sortie au fil de l'eau.
+pub async fn install_component(
+    app: &AppHandle,
+    game: &SteamGame,
+    component: crate::prefix::Component,
+    deps: &Dependencies,
+) -> Result<bool> {
+    let flatpak = deps.protontricks.is_none();
+    if flatpak && !deps.protontricks_flatpak {
+        return Err(TuxError::MissingDependency {
+            name: "protontricks".into(),
+            hint: "Installe-le avec : sudo pacman -S protontricks".into(),
+        });
+    }
+
+    let (program, mut args) = if flatpak {
+        (
+            "flatpak".to_string(),
+            vec!["run".to_string(), FLATPAK_PROTONTRICKS.to_string()],
+        )
+    } else {
+        ("protontricks".to_string(), Vec::new())
+    };
+    // -q : installation sans interaction, indispensable hors terminal.
+    args.extend([
+        "-q".to_string(),
+        game.app_id.to_string(),
+        component.verb().to_string(),
+    ]);
+
+    log(
+        app,
+        Some(game.app_id),
+        LogLevel::Info,
+        format!(
+            "Installation de {} dans le préfixe de « {} ». Cela peut prendre plusieurs minutes.",
+            component.label(),
+            game.name
+        ),
+    );
+    log(
+        app,
+        Some(game.app_id),
+        LogLevel::Command,
+        format!("{program} {}", args.join(" ")),
+    );
+
+    let mut child = tokio::process::Command::new(&program)
+        .args(&args)
+        .env("PROTONTRICKS_NO_GUI", "1")
+        .env("WINEDEBUG", "fixme-all")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|source| TuxError::Spawn {
+            program: program.clone(),
+            source,
+        })?;
+
+    if let Some(stdout) = child.stdout.take() {
+        stream_output(app.clone(), game.app_id, stdout, LogLevel::Stdout);
+    }
+    if let Some(stderr) = child.stderr.take() {
+        stream_output(app.clone(), game.app_id, stderr, LogLevel::Stderr);
+    }
+
+    let status = child
+        .wait()
+        .await
+        .map_err(|source| TuxError::Spawn { program, source })?;
+
+    let success = status.success();
+    log(
+        app,
+        Some(game.app_id),
+        if success {
+            LogLevel::Success
+        } else {
+            LogLevel::Error
+        },
+        if success {
+            format!("{} installé.", component.label())
+        } else {
+            format!(
+                "L'installation de {} a échoué (code {}).",
+                component.label(),
+                status.code().unwrap_or(-1)
+            )
+        },
+    );
+    Ok(success)
 }
 
 /// Arrête un trainer lancé par ArchMod (SIGTERM au groupe de processus).
