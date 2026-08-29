@@ -177,7 +177,11 @@ fn refreshed_system() -> System {
         true,
         ProcessRefreshKind::nothing()
             .with_cmd(UpdateKind::Always)
-            .with_exe(UpdateKind::Always),
+            .with_exe(UpdateKind::Always)
+            // Le répertoire courant est le seul repère fiable sous Proton :
+            // l'exécutable est le chargeur de Wine et la ligne de commande
+            // porte un chemin Windows.
+            .with_cwd(UpdateKind::Always),
     );
     system
 }
@@ -199,11 +203,14 @@ fn match_game(system: &System, game: &SteamGame) -> GameRunState {
         let exe_matches = process
             .exe()
             .is_some_and(|exe| exe.starts_with(&game.install_path));
+        let cwd_matches = process
+            .cwd()
+            .is_some_and(|cwd| cwd.starts_with(&game.install_path));
 
-        if cmd_matches || exe_matches {
+        if cmd_matches || exe_matches || cwd_matches {
             pids.push(pid.as_u32());
             if matched_by.is_none() {
-                matched_by = Some(if exe_matches {
+                matched_by = Some(if exe_matches || cwd_matches {
                     format!("processus dans {install_path}")
                 } else {
                     format!("marqueur Steam {app_marker}")
@@ -226,20 +233,64 @@ pub fn game_run_state(game: &SteamGame) -> GameRunState {
 
 /// Processus du jeu lui-même, à l'exclusion des enveloppes de Steam.
 ///
-/// `reaper`, `pressure-vessel` et `proton` portent tous l'AppID dans leur ligne
-/// de commande ; seul le binaire du jeu vit dans le dossier d'installation.
+/// Sous Proton, aucun processus n'a le jeu pour exécutable : `/proc/pid/exe`
+/// pointe vers le chargeur de Wine et la ligne de commande porte un chemin
+/// Windows (`S:\steamapps\common\Jeu\jeu.exe`). Deux repères tiennent :
+///
+/// - le **répertoire courant**, que pressure-vessel place dans le dossier
+///   d'installation ;
+/// - le **nom du processus**, qui reste celui du binaire Windows et qu'on
+///   retrouve dans la chaîne de lancement de Steam.
 pub fn game_process(game: &SteamGame) -> Option<u32> {
     let system = refreshed_system();
-    system
+
+    // Nom attendu du binaire, extrait de la ligne de commande qui porte l'AppID :
+    // c'est le seul endroit où Steam écrit le chemin Linux du jeu.
+    let marker = format!("AppId={}", game.app_id);
+    let expected: Option<String> = system
+        .processes()
+        .values()
+        .filter(|process| {
+            process
+                .cmd()
+                .iter()
+                .any(|arg| arg.to_string_lossy().contains(&marker))
+        })
+        .flat_map(|process| process.cmd().iter())
+        .filter_map(|arg| {
+            let argument = arg.to_string_lossy();
+            argument
+                .to_ascii_lowercase()
+                .ends_with(".exe")
+                .then(|| {
+                    std::path::Path::new(argument.as_ref())
+                        .file_name()
+                        .map(|name| name.to_string_lossy().to_ascii_lowercase())
+                })
+                .flatten()
+        })
+        .last();
+
+    let candidates: Vec<(u32, bool)> = system
         .processes()
         .iter()
-        .filter(|(_, process)| {
-            process
-                .exe()
-                .is_some_and(|exe| exe.starts_with(&game.install_path))
+        .filter_map(|(pid, process)| {
+            let in_install = process
+                .cwd()
+                .is_some_and(|cwd| cwd.starts_with(&game.install_path));
+            let name = process.name().to_string_lossy().to_ascii_lowercase();
+            let named = expected.as_deref() == Some(name.as_str());
+            (in_install || named).then_some((pid.as_u32(), named))
         })
-        .map(|(pid, _)| pid.as_u32())
+        .collect();
+
+    // Le binaire nommé prime : les enveloppes partagent son répertoire courant.
+    candidates
+        .iter()
+        .filter(|(_, named)| *named)
+        .map(|(pid, _)| *pid)
         .min()
+        .or_else(|| candidates.iter().map(|(pid, _)| *pid).min())
 }
 
 /// État d'exécution de toute la bibliothèque en un seul balayage des processus.

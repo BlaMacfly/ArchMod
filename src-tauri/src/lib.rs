@@ -531,6 +531,19 @@ async fn app_paths() -> Result<AppPaths> {
     })
 }
 
+/// Accès aux détections internes pour les outils de diagnostic.
+pub fn find_game_for_diagnostics(app_id: u32) -> Result<SteamGame> {
+    steam_scanner::find_game(app_id)
+}
+
+pub fn run_state_for_diagnostics(game: &SteamGame) -> injector::GameRunState {
+    injector::game_run_state(game)
+}
+
+pub fn game_process_for_diagnostics(game: &SteamGame) -> Option<u32> {
+    injector::game_process(game)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
