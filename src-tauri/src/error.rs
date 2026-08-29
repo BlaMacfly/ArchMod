@@ -94,6 +94,9 @@ pub enum TuxError {
     #[error("Symbole « {symbol} » non résolu : il est produit par un script d'auto-assembleur")]
     SymbolUnresolved { symbol: String },
 
+    #[error("Profil de trainer invalide : {detail}")]
+    Profile { detail: String },
+
     #[error("Table Cheat Engine illisible : {detail}")]
     CheatTable { detail: String },
 
@@ -142,6 +145,7 @@ impl TuxError {
             TuxError::PatternInvalid { .. } => "pattern_invalid",
             TuxError::HookImpossible { .. } => "hook_impossible",
             TuxError::SymbolUnresolved { .. } => "symbol_unresolved",
+            TuxError::Profile { .. } => "profile",
             TuxError::CheatTable { .. } => "cheat_table",
             TuxError::Internal(_) => "internal",
         }

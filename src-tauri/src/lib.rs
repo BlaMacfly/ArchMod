@@ -13,6 +13,7 @@ mod injector;
 /// Exposé pour les outils de diagnostic (`cargo run --example ...`).
 pub mod memory;
 mod prefix;
+pub mod profile;
 mod proton;
 mod steam_scanner;
 mod vault;

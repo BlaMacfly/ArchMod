@@ -806,6 +806,7 @@ mod tests {
             library_path: PathBuf::from("/mnt/jeux/SteamLibrary"),
             install_path: PathBuf::from("/mnt/jeux/SteamLibrary/steamapps/common/The Witcher 3"),
             size_on_disk: 0,
+            build_id: None,
             last_played: 0,
             prefix_path: None,
         }

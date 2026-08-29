@@ -47,6 +47,10 @@ pub struct SteamGame {
     /// Dossier d'installation absolu (`steamapps/common/<installdir>`).
     pub install_path: PathBuf,
     pub size_on_disk: u64,
+    /// Identifiant de build Steam : il change à chaque mise à jour du jeu, ce
+    /// qui permet de savoir si un profil de trainer vise encore la bonne
+    /// version — les adresses trouvées pour un build ne valent pas pour un autre.
+    pub build_id: Option<String>,
     /// Timestamp Unix, `0` si le jeu n'a jamais été lancé.
     pub last_played: u64,
     /// Préfixe Proton (`steamapps/compatdata/<AppID>/pfx`) s'il existe déjà.
@@ -181,6 +185,7 @@ fn parse_manifest(path: &Path, steam_root: &Path, library: &Path) -> Result<Opti
         library_path: library.to_path_buf(),
         install_path,
         size_on_disk: state.get_u64("SizeOnDisk").unwrap_or(0),
+        build_id: state.get_str("buildid").map(str::to_owned),
         last_played: state.get_u64("LastPlayed").unwrap_or(0),
         prefix_path: compat.is_dir().then_some(compat),
     }))

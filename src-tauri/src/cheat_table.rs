@@ -13,12 +13,12 @@
 
 use std::collections::BTreeSet;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::error::{Result, TuxError};
 
 /// Type de la valeur pointée, tel que nommé par Cheat Engine.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "kind", content = "name")]
 pub enum ValueType {
     Byte,
