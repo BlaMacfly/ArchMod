@@ -92,6 +92,8 @@ export const api = {
     call<OptionStatus>("set_option", { appId, optionId, value: value ?? null }),
   clearOption: (appId: number, optionId: string) =>
     call<boolean>("clear_option", { appId, optionId }),
+  refreshValues: (appId: number) =>
+    call<ActivationReport>("refresh_values", { appId }),
   deactivateProfile: (appId: number) =>
     call<boolean>("deactivate_profile", { appId }),
   probeRecipe: (appId: number, recipe: AddressRecipe, valueType: ValueTypeRef) =>

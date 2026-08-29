@@ -76,6 +76,12 @@ pub enum Control {
     },
     /// Bouton : écrit une fois, sans gel.
     Action { value: Value },
+    /// Simple affichage : la valeur est lue et rafraîchie, jamais écrite.
+    ///
+    /// Indispensable pour les statistiques, et pour toute adresse qui pointe
+    /// vers une section de code — lisible, mais que le jeu n'autorise pas à
+    /// modifier.
+    Display,
 }
 
 fn default_true() -> bool {

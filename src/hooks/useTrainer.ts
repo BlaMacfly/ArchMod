@@ -61,6 +61,19 @@ export function useTrainer(
     };
   }, [appId, gameName, buildId]);
 
+  // Les valeurs affichées doivent vivre : sans cela, une statistique resterait
+  // figée sur sa lecture initiale.
+  useEffect(() => {
+    if (appId === null || !active) return;
+    const interval = window.setInterval(() => {
+      api
+        .refreshValues(appId)
+        .then(setReport)
+        .catch(() => undefined);
+    }, 1500);
+    return () => window.clearInterval(interval);
+  }, [appId, active]);
+
   const activate = useCallback(
     async (profile: Profile) => {
       if (appId === null) return;

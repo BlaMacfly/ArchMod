@@ -487,6 +487,12 @@ async fn clear_option(
     Ok(cleared)
 }
 
+/// Relit les valeurs de toutes les options résolues.
+#[tauri::command]
+async fn refresh_values(state: State<'_, AppState>, app_id: u32) -> Result<ActivationReport> {
+    state.runtimes.refresh(app_id).await
+}
+
 #[tauri::command]
 async fn deactivate_profile(state: State<'_, AppState>, app_id: u32) -> Result<bool> {
     Ok(state.runtimes.deactivate(app_id).await)
@@ -534,6 +540,10 @@ async fn app_paths() -> Result<AppPaths> {
 /// Accès aux détections internes pour les outils de diagnostic.
 pub fn find_game_for_diagnostics(app_id: u32) -> Result<SteamGame> {
     steam_scanner::find_game(app_id)
+}
+
+pub fn scan_games_for_diagnostics() -> Result<Vec<SteamGame>> {
+    steam_scanner::scan_games()
 }
 
 pub fn run_state_for_diagnostics(game: &SteamGame) -> injector::GameRunState {
@@ -593,6 +603,7 @@ pub fn run() {
             trainer_report,
             set_option,
             clear_option,
+            refresh_values,
             deactivate_profile,
             probe_recipe,
             save_profile,

@@ -166,7 +166,8 @@ export type Control =
       default: number | null;
       freeze: boolean;
     }
-  | { control: "action"; value: Value };
+  | { control: "action"; value: Value }
+  | { control: "display" };
 
 export interface TrainerOption {
   id: string;

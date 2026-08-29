@@ -191,10 +191,20 @@ impl TuxError {
                  les adresses ont bougé."
                     .into(),
             ),
-            TuxError::MemoryAccess { .. } => Some(
-                "Si l'accès est refusé, vérifie kernel.yama.ptrace_scope (0 autorise la lecture \
-                 entre processus d'un même utilisateur)."
-                    .into(),
+            TuxError::MemoryAccess {
+                operation, source, ..
+            } => Some(
+                // EFAULT sur une écriture : la page existe mais le jeu ne
+                // l'autorise pas en écriture — typiquement une section de code.
+                if *operation == "écriture" && source.raw_os_error() == Some(libc::EFAULT) {
+                    "Cette adresse n'est pas modifiable : elle pointe vers une zone en lecture \
+                     seule, le plus souvent du code plutôt qu'une donnée de jeu."
+                        .into()
+                } else {
+                    "Si l'accès est refusé, vérifie kernel.yama.ptrace_scope (0 autorise la \
+                     lecture entre processus d'un même utilisateur)."
+                        .to_string()
+                },
             ),
             TuxError::ProcessGone { .. } => {
                 Some("Le jeu s'est fermé : relance-le avant de réessayer.".into())

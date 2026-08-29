@@ -213,6 +213,14 @@ function OptionControl({
     return "";
   });
 
+  if (control.control === "display") {
+    return (
+      <span className="shrink-0 rounded-lg border border-ink-600 bg-ink-800 px-4 py-1.5 font-mono text-sm text-mist-200">
+        {valueNumber(status?.value ?? null) ?? "—"}
+      </span>
+    );
+  }
+
   if (control.control === "toggle") {
     return (
       <div className="flex shrink-0 overflow-hidden rounded-lg border border-ink-600">

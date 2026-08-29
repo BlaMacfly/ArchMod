@@ -103,6 +103,10 @@ pub struct Runtimes {
 /// Valeur à écrire pour une option, selon son contrôle et la saisie éventuelle.
 fn value_for(option: &TrainerOption, requested: Option<Value>) -> Result<(Value, bool)> {
     match &option.control {
+        Control::Display => Err(TuxError::Internal(format!(
+            "« {} » est une valeur affichée, pas modifiable",
+            option.name
+        ))),
         Control::Toggle { frozen } => Ok((requested.unwrap_or(*frozen), true)),
         Control::Action { value } => Ok((requested.unwrap_or(*value), false)),
         Control::Number {
@@ -260,6 +264,46 @@ impl Runtimes {
         Ok(runtime.freezer.unfreeze(option_id).await)
     }
 
+    /// Relit toutes les options résolues : c'est ce qui anime les valeurs
+    /// affichées, et ce qui révèle qu'une adresse est devenue caduque.
+    pub async fn refresh(&self, app_id: u32) -> Result<ActivationReport> {
+        let mut runtimes = self.inner.lock().await;
+        let runtime = runtimes
+            .get_mut(&app_id)
+            .ok_or_else(|| TuxError::Internal("aucun profil actif pour ce jeu".into()))?;
+
+        let options = runtime.profile.options.clone();
+        let mut statuses = Vec::new();
+        for option in &options {
+            let mut status = runtime.status_of(option);
+            match runtime
+                .session
+                .read_recipe(&option.address, &option.value_type)
+            {
+                Ok((address, value)) => {
+                    runtime.addresses.insert(option.id.clone(), address);
+                    status.address = Some(address);
+                    status.value = Some(value);
+                    status.error = None;
+                }
+                Err(error) => {
+                    status.error = Some(error.to_string());
+                    status.address = None;
+                }
+            }
+            statuses.push(status);
+        }
+
+        let resolved = statuses.iter().filter(|s| s.address.is_some()).count();
+        Ok(ActivationReport {
+            app_id,
+            pid: runtime.pid,
+            failed: statuses.len() - resolved,
+            resolved,
+            options: statuses,
+        })
+    }
+
     pub async fn deactivate(&self, app_id: u32) -> bool {
         let mut runtimes = self.inner.lock().await;
         match runtimes.remove(&app_id) {
@@ -367,6 +411,15 @@ mod tests {
         // Sans saisie, la valeur par défaut du profil est convertie au bon type.
         let (value, _) = value_for(&option, None).expect("défaut");
         assert_eq!(value, Value::FourBytes(50));
+    }
+
+    #[test]
+    fn a_display_option_is_never_written() {
+        let option = option(Control::Display, ValueType::FourBytes);
+        assert!(
+            value_for(&option, Some(Value::FourBytes(1))).is_err(),
+            "même avec une valeur fournie, on n'écrit pas"
+        );
     }
 
     #[test]

@@ -413,9 +413,15 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
 
   if (!game.running) {
     return (
-      <div className="rounded-card border border-warn-500/30 bg-warn-500/10 px-5 py-4 text-sm text-warn-500">
-        Lance le jeu depuis Steam : les adresses n'existent que pendant son
-        exécution.
+      <div className="rounded-card border border-warn-500/30 bg-warn-500/10 px-5 py-4 text-sm">
+        <p className="font-medium text-warn-500">
+          « {game.name} » n'est pas en cours d'exécution.
+        </p>
+        <p className="mt-1 text-mist-400">
+          Les adresses mémoire n'existent que pendant l'exécution du jeu. Lance-le
+          depuis Steam — ou sélectionne un autre jeu dans la liste, le filtre
+          « Actifs » ne montre que ceux qui tournent.
+        </p>
       </div>
     );
   }
