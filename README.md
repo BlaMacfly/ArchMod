@@ -1,7 +1,7 @@
 <div align="center">
   <img src="src/assets/logo.png" alt="ArchMod" width="120" />
   <h1>ArchMod</h1>
-  <p><strong>Un WeMod natif pour Linux.</strong> Associe tes trainers Windows à tes jeux Steam et injecte-les dans le bon préfixe Proton, sans terminal.</p>
+  <p><strong>Un WeMod natif pour Linux.</strong> Un panneau de triche pour tes jeux Steam sous Proton : lance tes trainers Windows dans le bon préfixe, ou active directement des options écrites par la communauté.</p>
   <p>
     <img alt="Rust" src="https://img.shields.io/badge/Rust-2021-000?logo=rust" />
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri" />
@@ -18,12 +18,32 @@
 
 ## Ce que ça fait
 
-- **Scan automatique de la bibliothèque Steam** — toutes les racines connues (native, `~/.steam/root`, Flatpak), tous les disques déclarés dans `libraryfolders.vdf`, tous les `appmanifest_*.acf`.
-- **Coffre de trainers** — chaque AppID Steam est associé à un `.exe` (FLiNG, WeMod extrait, MrAntiFun…) dans `~/.config/ArchMod/config.json`.
-- **Injection dans le préfixe Proton** — `protontricks`, avec deux replis natifs si le paquet n'est pas installé.
-- **Détection du jeu en cours** — via le marqueur `AppId=<id>` posé par le `reaper` de Steam et les chemins d'exécution des processus.
-- **Console temps réel** — la sortie de `protontricks`, Proton et Wine est diffusée ligne par ligne, sans mise en tampon.
-- **Visuels Steam** — jaquettes et bannières lues dans `appcache/librarycache`, complétées au besoin par le CDN Steam (désactivable).
+ArchMod se compose de trois couches, utilisables indépendamment.
+
+### 1. Lanceur de trainers Windows — *fonctionnel*
+
+- **Scan de la bibliothèque Steam** — toutes les racines connues (native, `~/.steam/root`, Flatpak), tous les disques déclarés dans `libraryfolders.vdf`, tous les `appmanifest_*.acf`.
+- **Coffre de trainers** — chaque AppID est associé à un `.exe` (FLiNG, MrAntiFun, Cheat Happens…) dans `~/.config/ArchMod/config.json`.
+- **Injection dans le préfixe Proton** — `protontricks`, avec deux replis natifs s'il est absent.
+- **Préparation du préfixe** — diagnostic de ce qui manque pour qu'un trainer démarre (.NET contre Wine-Mono, version de Windows déclarée, variante de Proton) et installation en un clic.
+- **Détection du jeu en cours** et **console temps réel**, sortie de Wine diffusée ligne par ligne.
+
+### 2. Moteur d'options natif — *en cours*
+
+Lire et écrire la mémoire d'un jeu Proton **sans Wine ni Cheat Engine** : un jeu
+lancé par Steam reste un processus Linux ordinaire. Recherche de motifs d'octets,
+résolution des chaînes de pointeurs, gel de valeurs, pose de détours dans le code.
+
+### 3. Profils communautaires — *fondation posée*
+
+Le travail de recherche d'adresses ne peut pas reposer sur une seule personne.
+ArchMod fournit le **panneau** au joueur et le **format d'échange** à ceux qui
+savent chercher avec Cheat Engine, GameConqueror ou PINCE. Les profils vivent
+dans [`profiles/`](profiles/), un par version de jeu, et se partagent par pull
+request — la CI valide chaque contribution automatiquement.
+
+> Personne n'a à refaire le travail d'un autre : un profil écrit une fois pour
+> un build donné sert à tous ceux qui jouent au même build.
 
 ## Prérequis
 
@@ -113,8 +133,11 @@ src-tauri/src/
 ├── vault.rs           config.json : association AppID → trainer, écriture atomique
 ├── proton.rs          résolution de la distribution Proton d'un jeu
 ├── injector.rs        plans de lancement, exécution asynchrone, streaming des logs, arrêt
+├── prefix.rs          diagnostic du préfixe : .NET, Wine-Mono, version de Windows
 ├── memory.rs          lecture/écriture mémoire du jeu, recherche de motifs (AOB)
+├── hook.rs            analyse et pose de détours dans le code d'un jeu
 ├── cheat_table.rs     parseur des tables Cheat Engine (.CT)
+├── profile.rs         format des profils communautaires, validation, stockage
 ├── engine.rs          résolution des options, lecture/écriture de valeurs, gel
 └── lib.rs             état partagé et commandes Tauri
 
