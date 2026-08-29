@@ -16,6 +16,7 @@ use tokio::task::JoinHandle;
 use crate::cheat_table::{AddressBase, CheatEntry, CheatTable, Readiness, ValueType};
 use crate::error::{Result, TuxError};
 use crate::memory::{self, Module, Pattern};
+use crate::profile::{AddressRecipe, Anchor};
 
 /// Cadence de réécriture des valeurs gelées.
 const FREEZE_INTERVAL: Duration = Duration::from_millis(100);
@@ -222,6 +223,76 @@ impl Session {
         }
         let base = self.base_address(entry)?;
         memory::resolve_pointer_in(self.pid, base, &entry.offsets)
+    }
+
+    /// Adresse d'ancrage d'une recette de profil.
+    fn anchor_address(&mut self, anchor: &Anchor) -> Result<u64> {
+        match anchor {
+            Anchor::Module { module, offset } => {
+                let module = self.module(module)?;
+                Ok(module.base.wrapping_add(*offset as u64))
+            }
+            Anchor::Aob {
+                module,
+                pattern,
+                offset,
+                occurrence,
+            } => {
+                let parsed = Pattern::parse(pattern)?;
+                let module = self.module(module)?;
+                let hits = memory::scan_module(self.pid, &module, &parsed)?;
+                let found =
+                    hits.get(*occurrence)
+                        .copied()
+                        .ok_or_else(|| TuxError::PatternNotFound {
+                            pattern: pattern.clone(),
+                            module: module.name.clone(),
+                            found: hits.len(),
+                            wanted: *occurrence,
+                        })?;
+                Ok(found.wrapping_add(*offset as u64))
+            }
+        }
+    }
+
+    /// Adresse finale décrite par une recette de profil.
+    ///
+    /// Convention, volontairement différente de celle des fichiers `.CT` et
+    /// documentée telle quelle pour les contributeurs : les décalages sont
+    /// appliqués **dans l'ordre de lecture**, avec un déréférencement entre
+    /// chaque étape mais pas après le dernier. Les décalages `[18, C0]` sur
+    /// l'ancrage `A` désignent donc `[A+18]+C0`.
+    pub fn resolve_recipe(&mut self, recipe: &AddressRecipe) -> Result<u64> {
+        let mut address = self.anchor_address(&recipe.anchor)?;
+        if recipe.dereference {
+            address = memory::read_u64(self.pid, address)?;
+        }
+
+        let last = recipe.offsets.len().saturating_sub(1);
+        for (index, offset) in recipe.offsets.iter().enumerate() {
+            address = address.wrapping_add(*offset as u64);
+            if index != last {
+                address = memory::read_u64(self.pid, address)?;
+            }
+        }
+        Ok(address)
+    }
+
+    /// Lit la valeur décrite par une recette — l'essai en direct de l'atelier.
+    pub fn read_recipe(
+        &mut self,
+        recipe: &AddressRecipe,
+        value_type: &ValueType,
+    ) -> Result<(u64, Value)> {
+        let size = value_type.size().ok_or_else(|| {
+            TuxError::Internal(format!("type {value_type:?} non lisible directement"))
+        })?;
+        let address = self.resolve_recipe(recipe)?;
+        let mut buffer = vec![0u8; size];
+        memory::read(self.pid, address, &mut buffer)?;
+        let value = Value::from_bytes(value_type, &buffer)
+            .ok_or_else(|| TuxError::Internal("décodage impossible".into()))?;
+        Ok((address, value))
     }
 
     pub fn read(&mut self, entry: &CheatEntry) -> Result<Value> {

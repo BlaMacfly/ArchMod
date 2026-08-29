@@ -224,6 +224,24 @@ pub fn game_run_state(game: &SteamGame) -> GameRunState {
     match_game(&refreshed_system(), game)
 }
 
+/// Processus du jeu lui-même, à l'exclusion des enveloppes de Steam.
+///
+/// `reaper`, `pressure-vessel` et `proton` portent tous l'AppID dans leur ligne
+/// de commande ; seul le binaire du jeu vit dans le dossier d'installation.
+pub fn game_process(game: &SteamGame) -> Option<u32> {
+    let system = refreshed_system();
+    system
+        .processes()
+        .iter()
+        .filter(|(_, process)| {
+            process
+                .exe()
+                .is_some_and(|exe| exe.starts_with(&game.install_path))
+        })
+        .map(|(pid, _)| pid.as_u32())
+        .min()
+}
+
 /// État d'exécution de toute la bibliothèque en un seul balayage des processus.
 pub fn scan_running(games: &[SteamGame]) -> HashMap<u32, GameRunState> {
     let system = refreshed_system();

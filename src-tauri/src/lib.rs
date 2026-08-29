@@ -16,6 +16,7 @@ mod prefix;
 pub mod profile;
 mod proton;
 mod steam_scanner;
+pub mod trainer;
 mod vault;
 mod vdf;
 
@@ -30,7 +31,9 @@ use banners::BannerKind;
 use error::{ErrorReport, Result};
 use injector::{Dependencies, LaunchOutcome, LaunchPlan, RunningTrainer, TrainerRegistry};
 use prefix::{Component, PrefixReport};
+use profile::{BuildMatch, Profile};
 use steam_scanner::SteamGame;
+use trainer::{ActivationReport, OptionStatus, Runtimes};
 use vault::{Settings, TrainerEntry, Vault};
 
 /// État partagé entre toutes les commandes.
@@ -44,6 +47,8 @@ struct AppState {
     /// sous-processus (`flatpak info`) qu'on ne veut pas répéter à chaque clic.
     dependencies: Mutex<Option<Dependencies>>,
     games: Mutex<Vec<SteamGame>>,
+    /// Profils de trainer actifs, un par jeu.
+    runtimes: Runtimes,
     steam_roots: Mutex<Vec<PathBuf>>,
 }
 
@@ -63,6 +68,7 @@ impl AppState {
             registry: Arc::new(TrainerRegistry::default()),
             dependencies: Mutex::new(None),
             games: Mutex::new(Vec::new()),
+            runtimes: Runtimes::default(),
             steam_roots: Mutex::new(Vec::new()),
         }
     }
@@ -384,6 +390,132 @@ async fn check_dependencies(state: State<'_, AppState>) -> Result<Dependencies> 
     Ok(deps)
 }
 
+/// Un profil disponible pour un jeu, avec sa pertinence pour le build installé.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProfileEntry {
+    profile: Profile,
+    build_match: BuildMatch,
+}
+
+/// Profils installés localement pour ce jeu, les plus pertinents en premier.
+#[tauri::command]
+async fn profiles_for_game(state: State<'_, AppState>, app_id: u32) -> Result<Vec<ProfileEntry>> {
+    let game = state.game(app_id).await.ok();
+    let build = game.as_ref().and_then(|game| game.build_id.clone());
+
+    Ok(profile::for_game(app_id, build.as_deref())?
+        .into_iter()
+        .map(|profile| ProfileEntry {
+            build_match: profile.matches_build(build.as_deref()),
+            profile,
+        })
+        .collect())
+}
+
+/// Charge un profil sur le jeu en cours et résout toutes ses adresses.
+#[tauri::command]
+async fn activate_profile(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+    profile: Profile,
+) -> Result<ActivationReport> {
+    let game = state.game(app_id).await?;
+    let report = state.runtimes.activate(&game, profile).await?;
+
+    injector::log(
+        &app,
+        Some(app_id),
+        if report.failed == 0 {
+            injector::LogLevel::Success
+        } else {
+            injector::LogLevel::Warn
+        },
+        format!(
+            "Profil chargé sur « {} » (PID {}) : {} option(s) résolue(s), {} en échec.",
+            game.name, report.pid, report.resolved, report.failed
+        ),
+    );
+    Ok(report)
+}
+
+#[tauri::command]
+async fn trainer_report(
+    state: State<'_, AppState>,
+    app_id: u32,
+) -> Result<Option<ActivationReport>> {
+    Ok(state.runtimes.report(app_id).await)
+}
+
+/// Active une option : écrit sa valeur, et la gèle si son contrôle l'exige.
+#[tauri::command]
+async fn set_option(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+    option_id: String,
+    value: Option<engine::Value>,
+) -> Result<OptionStatus> {
+    let status = state.runtimes.set(app_id, &option_id, value).await?;
+    injector::log(
+        &app,
+        Some(app_id),
+        injector::LogLevel::Success,
+        format!(
+            "Option « {option_id} » activée en {:#x}.",
+            status.address.unwrap_or_default()
+        ),
+    );
+    Ok(status)
+}
+
+#[tauri::command]
+async fn clear_option(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+    option_id: String,
+) -> Result<bool> {
+    let cleared = state.runtimes.clear(app_id, &option_id).await?;
+    injector::log(
+        &app,
+        Some(app_id),
+        injector::LogLevel::Info,
+        format!("Option « {option_id} » désactivée."),
+    );
+    Ok(cleared)
+}
+
+#[tauri::command]
+async fn deactivate_profile(state: State<'_, AppState>, app_id: u32) -> Result<bool> {
+    Ok(state.runtimes.deactivate(app_id).await)
+}
+
+/// Essai en direct d'une recette d'adresse — l'outil central de l'atelier.
+#[tauri::command]
+async fn probe_recipe(
+    state: State<'_, AppState>,
+    app_id: u32,
+    recipe: profile::AddressRecipe,
+    value_type: cheat_table::ValueType,
+) -> Result<OptionStatus> {
+    let game = state.game(app_id).await?;
+    state.runtimes.probe(&game, &recipe, &value_type).await
+}
+
+#[tauri::command]
+async fn save_profile(profile: Profile) -> Result<PathBuf> {
+    profile::save(&profile)
+}
+
+#[tauri::command]
+async fn import_profile(path: PathBuf) -> Result<Profile> {
+    let imported = profile::load_from(&path)?;
+    profile::save(&imported)?;
+    Ok(imported)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AppPaths {
@@ -443,6 +575,15 @@ pub fn run() {
             check_dependencies,
             inspect_prefix,
             install_component,
+            profiles_for_game,
+            activate_profile,
+            trainer_report,
+            set_option,
+            clear_option,
+            deactivate_profile,
+            probe_recipe,
+            save_profile,
+            import_profile,
             app_paths,
         ])
         .run(tauri::generate_context!())

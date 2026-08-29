@@ -94,6 +94,17 @@ pub enum TuxError {
     #[error("Symbole « {symbol} » non résolu : il est produit par un script d'auto-assembleur")]
     SymbolUnresolved { symbol: String },
 
+    #[error("« {name} » n'est pas en cours d'exécution")]
+    GameNotRunning { name: String },
+
+    #[error("Motif « {pattern} » : {found} correspondance(s) dans {module}, la n°{wanted} était demandée")]
+    PatternNotFound {
+        pattern: String,
+        module: String,
+        found: usize,
+        wanted: usize,
+    },
+
     #[error("Profil de trainer invalide : {detail}")]
     Profile { detail: String },
 
@@ -145,6 +156,8 @@ impl TuxError {
             TuxError::PatternInvalid { .. } => "pattern_invalid",
             TuxError::HookImpossible { .. } => "hook_impossible",
             TuxError::SymbolUnresolved { .. } => "symbol_unresolved",
+            TuxError::GameNotRunning { .. } => "game_not_running",
+            TuxError::PatternNotFound { .. } => "pattern_not_found",
             TuxError::Profile { .. } => "profile",
             TuxError::CheatTable { .. } => "cheat_table",
             TuxError::Internal(_) => "internal",
@@ -169,6 +182,15 @@ impl TuxError {
             TuxError::TrainerMissing(_) => {
                 Some("Réimporte le trainer depuis son nouvel emplacement.".into())
             }
+            TuxError::GameNotRunning { .. } => Some(
+                "Lance le jeu depuis Steam : les adresses n'existent que pendant son exécution."
+                    .into(),
+            ),
+            TuxError::PatternNotFound { .. } => Some(
+                "Le jeu a probablement été mis à jour depuis l'écriture du profil : \
+                 les adresses ont bougé."
+                    .into(),
+            ),
             TuxError::MemoryAccess { .. } => Some(
                 "Si l'accès est refusé, vérifie kernel.yama.ptrace_scope (0 autorise la lecture \
                  entre processus d'un même utilisateur)."

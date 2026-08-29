@@ -450,7 +450,10 @@ mod tests {
         let mut checked = 0;
         let mut walk = vec![root];
         while let Some(dir) = walk.pop() {
-            for entry in std::fs::read_dir(&dir).expect("lecture du dossier").flatten() {
+            for entry in std::fs::read_dir(&dir)
+                .expect("lecture du dossier")
+                .flatten()
+            {
                 let path = entry.path();
                 if path.is_dir() {
                     walk.push(path);
@@ -459,12 +462,15 @@ mod tests {
                 if path.extension().and_then(|e| e.to_str()) != Some("json") {
                     continue;
                 }
-                let profile = load_from(&path)
-                    .unwrap_or_else(|error| panic!("{} : {error}", path.display()));
+                let profile =
+                    load_from(&path).unwrap_or_else(|error| panic!("{} : {error}", path.display()));
 
                 // Le chemin doit correspondre au contenu, sinon l'application
                 // ne retrouvera pas le profil du build installé.
-                let dossier = path.parent().and_then(|p| p.file_name()).and_then(|n| n.to_str());
+                let dossier = path
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .and_then(|n| n.to_str());
                 assert_eq!(
                     dossier,
                     Some(profile.directory_name().as_str()),
