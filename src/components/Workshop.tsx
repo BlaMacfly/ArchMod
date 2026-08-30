@@ -130,6 +130,8 @@ interface WorkshopProps {
   game: GameView;
   profile: Profile;
   onProfileChange: (profile: Profile) => void;
+  /// Prévient la vue parente qu'un profil vient d'être écrit sur le disque.
+  onSaved: () => void;
   onNotice: (message: string) => void;
 }
 
@@ -142,6 +144,7 @@ export function Workshop({
   game,
   profile,
   onProfileChange,
+  onSaved,
   onNotice,
 }: WorkshopProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY);
@@ -196,6 +199,8 @@ export function Workshop({
   const save = async () => {
     try {
       const path = await api.saveProfile(profile);
+      // Le panneau doit voir immédiatement le profil qu'on vient d'écrire.
+      onSaved();
       onNotice(`Profil enregistré : ${path}`);
     } catch (error) {
       onNotice(toTuxError(error).message);

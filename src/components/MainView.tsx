@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import logoUrl from "../assets/logo.png";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { StatusPill } from "./StatusPill";
+import { PrefixCard } from "./PrefixCard";
 import { TrainerPanel } from "./TrainerPanel";
 import { Workshop } from "./Workshop";
 import { useTrainer } from "../hooks/useTrainer";
@@ -226,6 +228,7 @@ export function MainView({
             game={game}
             profile={trainer.draft}
             onProfileChange={trainer.setDraft}
+            onSaved={() => void trainer.refreshProfiles()}
             onNotice={onNotice}
           />
         )}
@@ -334,6 +337,9 @@ export function MainView({
           </p>
         )}
 
+        {/* État du préfixe Proton */}
+        <PrefixCard appId={game.appId} onNotice={onNotice} />
+
         {/* Détails techniques */}
         <details className="group rounded-card border border-ink-700 bg-ink-850">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium text-mist-300 transition-colors hover:text-mist-100">
@@ -393,6 +399,49 @@ function Row({ label, value, mono, onCopy }: RowProps) {
   );
 }
 
+/**
+ * Importe un profil téléchargé. Sans ce bouton, le dépôt communautaire ne
+ * servirait à rien : il faudrait copier le fichier à la main.
+ */
+function ImportButton({
+  trainer,
+  onNotice,
+}: {
+  trainer: ReturnType<typeof useTrainer>;
+  onNotice: (message: string) => void;
+}) {
+  const importer = async () => {
+    try {
+      const chosen = await openFileDialog({
+        multiple: false,
+        directory: false,
+        title: "Choisir un profil ArchMod",
+        filters: [{ name: "Profil ArchMod", extensions: ["json"] }],
+      });
+      if (typeof chosen !== "string") return;
+
+      const profile = await api.importProfile(chosen);
+      await trainer.refreshProfiles();
+      onNotice(
+        `Profil « ${profile.game} » importé : ${profile.options.length} option(s).`,
+      );
+    } catch (error) {
+      onNotice(toTuxError(error).message);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void importer()}
+      className="inline-flex items-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-3.5 py-2 text-sm font-medium text-mist-100 transition-colors hover:border-brand-500/50 hover:bg-ink-700"
+    >
+      <FileDown className="h-4 w-4" />
+      Importer un profil (.json)
+    </button>
+  );
+}
+
 type Onglet = "lanceur" | "panneau" | "atelier";
 
 const ONGLETS: [Onglet, string, string][] = [
@@ -437,12 +486,19 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
           mémoire. Récupère-en un dans le dépôt communautaire, ou crée le tien
           depuis l'onglet Atelier.
         </p>
+        <div className="mt-4">
+          <ImportButton trainer={trainer} onNotice={onNotice} />
+        </div>
       </div>
     );
   }
 
   if (!active || !report) {
     return (
+      <>
+      <div className="mb-2 flex justify-end">
+        <ImportButton trainer={trainer} onNotice={onNotice} />
+      </div>
       <ul className="space-y-2">
         {entries.map(({ profile, buildMatch }) => (
           <li
@@ -476,6 +532,7 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
           </li>
         ))}
       </ul>
+      </>
     );
   }
 
