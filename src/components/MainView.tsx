@@ -15,6 +15,7 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { StatusPill } from "./StatusPill";
 import { PrefixCard } from "./PrefixCard";
+import { Scanner } from "./Scanner";
 import { TrainerPanel } from "./TrainerPanel";
 import { Workshop } from "./Workshop";
 import { useTrainer } from "../hooks/useTrainer";
@@ -226,6 +227,8 @@ export function MainView({
         {tab === "panneau" && (
           <PanneauSection game={game} trainer={trainer} onNotice={onNotice} />
         )}
+
+        {tab === "scanner" && <Scanner game={game} onNotice={onNotice} />}
 
         {tab === "atelier" && trainer.draft && (
           <Workshop
@@ -465,11 +468,12 @@ function ImportButton({
   );
 }
 
-type Onglet = "lanceur" | "panneau" | "atelier";
+type Onglet = "lanceur" | "panneau" | "scanner" | "atelier";
 
 const ONGLETS: [Onglet, TranslationKey, TranslationKey][] = [
   ["lanceur", "main.tabLauncher", "main.tabLauncherHint"],
   ["panneau", "main.tabPanel", "main.tabPanelHint"],
+  ["scanner", "scanner.tab", "scanner.tabHint"],
   ["atelier", "main.tabWorkshop", "main.tabWorkshopHint"],
 ];
 

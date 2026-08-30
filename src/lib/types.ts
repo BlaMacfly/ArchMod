@@ -244,3 +244,32 @@ export interface CheatTableImport {
   profile: Profile;
   skipped: SkippedEntry[];
 }
+
+// --- Recherche de valeurs --------------------------------------------------
+
+export type Filter =
+  | { kind: "exact"; value: Value }
+  | { kind: "greater"; value: Value }
+  | { kind: "less"; value: Value }
+  | { kind: "increased" }
+  | { kind: "decreased" }
+  | { kind: "changed" }
+  | { kind: "unchanged" };
+
+export type Anchorage =
+  | { kind: "module"; module: string; offset: number }
+  | { kind: "volatile" };
+
+export interface CandidateView {
+  address: number;
+  value: Value;
+  previous: Value | null;
+  anchorage: Anchorage;
+}
+
+export interface ScanReport {
+  matches: number;
+  elapsedMs: number;
+  truncated: boolean;
+  sample: CandidateView[];
+}

@@ -15,11 +15,13 @@ pub mod memory;
 mod prefix;
 pub mod profile;
 mod proton;
+pub mod scanner;
 mod steam_scanner;
 pub mod trainer;
 mod vault;
 mod vdf;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -32,6 +34,7 @@ use error::{ErrorReport, Result};
 use injector::{Dependencies, LaunchOutcome, LaunchPlan, RunningTrainer, TrainerRegistry};
 use prefix::{Component, PrefixReport};
 use profile::{BuildMatch, Profile};
+use scanner::{CandidateView, Filter, ScanReport, Scanner};
 use steam_scanner::SteamGame;
 use trainer::{ActivationReport, OptionStatus, Runtimes};
 use vault::{Settings, TrainerEntry, Vault};
@@ -49,6 +52,8 @@ struct AppState {
     games: Mutex<Vec<SteamGame>>,
     /// Profils de trainer actifs, un par jeu.
     runtimes: Runtimes,
+    /// Recherches de valeurs en cours, avec le gel de leurs résultats.
+    scanners: Mutex<HashMap<u32, ScanState>>,
     steam_roots: Mutex<Vec<PathBuf>>,
 }
 
@@ -69,6 +74,7 @@ impl AppState {
             dependencies: Mutex::new(None),
             games: Mutex::new(Vec::new()),
             runtimes: Runtimes::default(),
+            scanners: Mutex::new(HashMap::new()),
             steam_roots: Mutex::new(Vec::new()),
         }
     }
@@ -390,6 +396,113 @@ async fn check_dependencies(state: State<'_, AppState>) -> Result<Dependencies> 
     Ok(deps)
 }
 
+/// Une recherche en cours et les valeurs qu'elle maintient figées.
+struct ScanState {
+    scanner: Scanner,
+    freezer: engine::Freezer,
+}
+
+/// Démarre une recherche : elle remplace celle qui était éventuellement en cours.
+#[tauri::command]
+async fn scan_start(
+    state: State<'_, AppState>,
+    app_id: u32,
+    value_type: cheat_table::ValueType,
+    filter: Filter,
+) -> Result<ScanReport> {
+    let game = state.game(app_id).await?;
+    let pid = injector::game_process(&game).ok_or(error::TuxError::GameNotRunning {
+        name: game.name.clone(),
+    })?;
+
+    let mut scanner = Scanner::new(pid, value_type);
+    let report = scanner.scan(filter)?;
+
+    let mut scanners = state.scanners.lock().await;
+    if let Some(mut previous) = scanners.remove(&app_id) {
+        previous.freezer.stop().await;
+    }
+    scanners.insert(
+        app_id,
+        ScanState {
+            scanner,
+            freezer: engine::Freezer::new(pid),
+        },
+    );
+    Ok(report)
+}
+
+/// Affine la recherche en cours.
+#[tauri::command]
+async fn scan_next(state: State<'_, AppState>, app_id: u32, filter: Filter) -> Result<ScanReport> {
+    let mut scanners = state.scanners.lock().await;
+    let entry = scanners
+        .get_mut(&app_id)
+        .ok_or_else(|| error::TuxError::Internal("aucune recherche en cours".into()))?;
+    entry.scanner.scan(filter)
+}
+
+/// Relit les valeurs affichées, sans filtrer.
+#[tauri::command]
+async fn scan_refresh(state: State<'_, AppState>, app_id: u32) -> Result<Vec<CandidateView>> {
+    let mut scanners = state.scanners.lock().await;
+    match scanners.get_mut(&app_id) {
+        Some(entry) => entry.scanner.refresh(),
+        None => Ok(Vec::new()),
+    }
+}
+
+#[tauri::command]
+async fn scan_reset(state: State<'_, AppState>, app_id: u32) -> Result<bool> {
+    let mut scanners = state.scanners.lock().await;
+    match scanners.remove(&app_id) {
+        Some(mut entry) => {
+            entry.freezer.stop().await;
+            Ok(true)
+        }
+        None => Ok(false),
+    }
+}
+
+/// Écrit une valeur à une adresse trouvée — l'épreuve décisive : si le jeu
+/// réagit, c'est la bonne adresse.
+#[tauri::command]
+async fn scan_write(
+    state: State<'_, AppState>,
+    app_id: u32,
+    address: u64,
+    value: engine::Value,
+) -> Result<()> {
+    let game = state.game(app_id).await?;
+    let pid = injector::game_process(&game).ok_or(error::TuxError::GameNotRunning {
+        name: game.name.clone(),
+    })?;
+    memory::write(pid, address, &value.to_bytes())
+}
+
+/// Fige une adresse trouvée, sans passer par un profil.
+#[tauri::command]
+async fn scan_freeze(
+    state: State<'_, AppState>,
+    app_id: u32,
+    address: u64,
+    value: Option<engine::Value>,
+) -> Result<bool> {
+    let mut scanners = state.scanners.lock().await;
+    let entry = scanners
+        .get_mut(&app_id)
+        .ok_or_else(|| error::TuxError::Internal("aucune recherche en cours".into()))?;
+
+    let key = format!("{address:#x}");
+    match value {
+        Some(value) => {
+            entry.freezer.freeze(key, address, value).await;
+            Ok(true)
+        }
+        None => Ok(entry.freezer.unfreeze(&key).await),
+    }
+}
+
 /// Un profil disponible pour un jeu, avec sa pertinence pour le build installé.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -636,6 +749,12 @@ pub fn run() {
             refresh_values,
             deactivate_profile,
             probe_recipe,
+            scan_start,
+            scan_next,
+            scan_refresh,
+            scan_reset,
+            scan_write,
+            scan_freeze,
             import_cheat_table,
             save_profile,
             import_profile,

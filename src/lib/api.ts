@@ -2,7 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   ActivationReport,
+  CandidateView,
   CheatTableImport,
+  Filter,
   AddressRecipe,
   AppPaths,
   BannerKind,
@@ -17,6 +19,7 @@ import type {
   PrefixReport,
   Profile,
   ProfileEntry,
+  ScanReport,
   Settings,
   StatusUpdate,
   TrainerEntry,
@@ -99,6 +102,19 @@ export const api = {
     call<boolean>("deactivate_profile", { appId }),
   probeRecipe: (appId: number, recipe: AddressRecipe, valueType: ValueTypeRef) =>
     call<OptionStatus>("probe_recipe", { appId, recipe, valueType }),
+  // Recherche de valeurs
+  scanStart: (appId: number, valueType: ValueTypeRef, filter: Filter) =>
+    call<ScanReport>("scan_start", { appId, valueType, filter }),
+  scanNext: (appId: number, filter: Filter) =>
+    call<ScanReport>("scan_next", { appId, filter }),
+  scanRefresh: (appId: number) =>
+    call<CandidateView[]>("scan_refresh", { appId }),
+  scanReset: (appId: number) => call<boolean>("scan_reset", { appId }),
+  scanWrite: (appId: number, address: number, value: Value) =>
+    call<void>("scan_write", { appId, address, value }),
+  scanFreeze: (appId: number, address: number, value: Value | null) =>
+    call<boolean>("scan_freeze", { appId, address, value }),
+
   importCheatTable: (appId: number, path: string) =>
     call<CheatTableImport>("import_cheat_table", { appId, path }),
   saveProfile: (profile: Profile) => call<string>("save_profile", { profile }),
