@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   ActivationReport,
+  CheatTableImport,
   AddressRecipe,
   AppPaths,
   BannerKind,
@@ -98,6 +99,8 @@ export const api = {
     call<boolean>("deactivate_profile", { appId }),
   probeRecipe: (appId: number, recipe: AddressRecipe, valueType: ValueTypeRef) =>
     call<OptionStatus>("probe_recipe", { appId, recipe, valueType }),
+  importCheatTable: (appId: number, path: string) =>
+    call<CheatTableImport>("import_cheat_table", { appId, path }),
   saveProfile: (profile: Profile) => call<string>("save_profile", { profile }),
   importProfile: (path: string) => call<Profile>("import_profile", { path }),
 };

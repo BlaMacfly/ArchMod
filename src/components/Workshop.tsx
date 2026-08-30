@@ -1,16 +1,19 @@
 import { useState } from "react";
 import {
+  FileInput,
   FlaskConical,
   Plus,
   Save,
   Trash2,
 } from "lucide-react";
+import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { api, formatAddress, toTuxError, valueNumber } from "../lib/api";
 import type {
   Anchor,
   GameView,
   OptionStatus,
   Profile,
+  SkippedEntry,
   TrainerOption,
   ValueTypeKind,
 } from "../lib/types";
@@ -151,6 +154,7 @@ export function Workshop({
   const [probe, setProbe] = useState<OptionStatus | null>(null);
   const [probeError, setProbeError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
+  const [skipped, setSkipped] = useState<SkippedEntry[]>([]);
 
   const patch = (fields: Partial<Draft>) =>
     setDraft((current) => ({ ...current, ...fields }));
@@ -188,6 +192,38 @@ export function Workshop({
     setDraft({ ...EMPTY, category: draft.category, module: draft.module });
     setProbe(null);
     onNotice(`Option « ${option.name} » ajoutée au profil.`);
+  };
+
+  /**
+   * Reprend une table Cheat Engine publiée. Les entrées dont l'adresse repose
+   * sur un module, ou sur un symbole qu'un scan de la table produit, sont
+   * converties ; les autres sont listées avec leur raison, plutôt que
+   * silencieusement perdues.
+   */
+  const importTable = async () => {
+    try {
+      const chosen = await openFileDialog({
+        multiple: false,
+        directory: false,
+        title: "Choisir une table Cheat Engine",
+        filters: [{ name: "Table Cheat Engine", extensions: ["CT", "ct", "xml"] }],
+      });
+      if (typeof chosen !== "string") return;
+
+      const imported = await api.importCheatTable(game.appId, chosen);
+      const known = new Set(profile.options.map((option) => option.id));
+      const added = imported.profile.options.filter(
+        (option) => !known.has(option.id),
+      );
+
+      onProfileChange({ ...profile, options: [...profile.options, ...added] });
+      setSkipped(imported.skipped);
+      onNotice(
+        `${added.length} option(s) reprise(s), ${imported.skipped.length} écartée(s).`,
+      );
+    } catch (error) {
+      onNotice(toTuxError(error).message);
+    }
   };
 
   const remove = (id: string) =>
@@ -390,12 +426,37 @@ export function Workshop({
             Ajouter au profil
           </button>
 
+          <button
+            type="button"
+            onClick={() => void importTable()}
+            className="inline-flex items-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-4 py-2 text-sm font-medium text-mist-100 transition-colors hover:border-brand-500/50 hover:bg-ink-700"
+          >
+            <FileInput className="h-4 w-4" />
+            Importer une table Cheat Engine
+          </button>
+
           {!game.running && (
             <span className="text-xs text-warn-500">
               Lance le jeu pour pouvoir éprouver une adresse.
             </span>
           )}
         </div>
+
+        {skipped.length > 0 && (
+          <details className="rounded-lg border border-ink-600 bg-ink-800 px-4 py-3 text-xs">
+            <summary className="cursor-pointer text-mist-300">
+              {skipped.length} entrée(s) de la table non reprises
+            </summary>
+            <ul className="mt-2 space-y-1 text-mist-500">
+              {skipped.map((entry, index) => (
+                <li key={index}>
+                  <span className="text-mist-300">{entry.description || "(sans nom)"}</span>{" "}
+                  — {entry.reason}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
 
         {(probe || probeError) && (
           <div

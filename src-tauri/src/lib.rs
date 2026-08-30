@@ -510,6 +510,36 @@ async fn probe_recipe(
     state.runtimes.probe(&game, &recipe, &value_type).await
 }
 
+/// Convertit une table Cheat Engine en profil, sans rien enregistrer.
+///
+/// L'auteur voit ce qui a été repris et ce qui a été écarté, puis décide.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CheatTableImport {
+    profile: Profile,
+    skipped: Vec<profile::Skipped>,
+}
+
+#[tauri::command]
+async fn import_cheat_table(
+    state: State<'_, AppState>,
+    app_id: u32,
+    path: PathBuf,
+) -> Result<CheatTableImport> {
+    let game = state.game(app_id).await?;
+    let raw = std::fs::read(&path).map_err(|source| error::TuxError::io(&path, source))?;
+    let table = cheat_table::CheatTable::parse(&String::from_utf8_lossy(&raw))?;
+
+    let (profile, skipped) =
+        profile::from_cheat_table(&table, app_id, &game.name, game.build_id.clone());
+    eprintln!(
+        "[archmod] table importée : {} option(s) reprise(s), {} écartée(s)",
+        profile.options.len(),
+        skipped.len()
+    );
+    Ok(CheatTableImport { profile, skipped })
+}
+
 #[tauri::command]
 async fn save_profile(profile: Profile) -> Result<PathBuf> {
     profile::save(&profile)
@@ -606,6 +636,7 @@ pub fn run() {
             refresh_values,
             deactivate_profile,
             probe_recipe,
+            import_cheat_table,
             save_profile,
             import_profile,
             app_paths,

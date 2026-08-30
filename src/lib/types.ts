@@ -234,3 +234,13 @@ export interface PrefixReport {
   windowsVersion: string | null;
   advice: Advice[];
 }
+
+export interface SkippedEntry {
+  description: string;
+  reason: string;
+}
+
+export interface CheatTableImport {
+  profile: Profile;
+  skipped: SkippedEntry[];
+}

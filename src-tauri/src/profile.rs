@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::cheat_table::ValueType;
+use crate::cheat_table::{AddressBase, CheatTable, Readiness, ValueType};
 use crate::engine::Value;
 use crate::error::{Result, TuxError};
 
@@ -246,6 +246,181 @@ impl Profile {
     }
 }
 
+/// Une entrée de table qu'ArchMod n'a pas su convertir, et pourquoi.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Skipped {
+    pub description: String,
+    pub reason: String,
+}
+
+/// Identifiant stable dérivé d'un libellé.
+fn slugify(name: &str) -> String {
+    let slug: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    let slug = slug.trim_matches('-').to_string();
+    let mut compact = String::with_capacity(slug.len());
+    let mut previous_dash = false;
+    for c in slug.chars() {
+        if c == '-' && previous_dash {
+            continue;
+        }
+        previous_dash = c == '-';
+        compact.push(c);
+    }
+    if compact.is_empty() {
+        "option".into()
+    } else {
+        compact
+    }
+}
+
+/// Convertit une table Cheat Engine en profil ArchMod.
+///
+/// Deux différences de convention doivent être franchies, et c'est là que se
+/// joue la justesse des adresses :
+///
+/// 1. **L'ordre des décalages.** Dans un `.CT`, le premier décalage listé est
+///    appliqué en dernier ; dans un profil, ils sont appliqués dans l'ordre de
+///    lecture. La liste est donc renversée, et le décalage porté par l'adresse
+///    de base vient en tête.
+/// 2. **Les symboles.** Une entrée qui vise `[player]+184` est inexploitable en
+///    l'état, mais si un script de la table définit `player` par un
+///    `aobscanmodule`, on peut remplacer le symbole par ce motif — et l'entrée
+///    devient utilisable sans moteur d'auto-assembleur.
+pub fn from_cheat_table(
+    table: &CheatTable,
+    app_id: u32,
+    game: &str,
+    build_id: Option<String>,
+) -> (Profile, Vec<Skipped>) {
+    let scans = table.scans();
+    let mut options = Vec::new();
+    let mut skipped = Vec::new();
+    let mut used_ids: BTreeSet<String> = BTreeSet::new();
+
+    for entry in table.flatten() {
+        let refuse = |reason: &str, skipped: &mut Vec<Skipped>| {
+            skipped.push(Skipped {
+                description: entry.description.clone(),
+                reason: reason.to_string(),
+            });
+        };
+
+        if let Readiness::Unsupported(reason) = entry.readiness() {
+            // Les titres de section n'ont pas à être signalés comme des échecs.
+            if !entry.group_header {
+                refuse(&reason, &mut skipped);
+            }
+            continue;
+        }
+        if entry.value_type.size().is_none() {
+            refuse("type de valeur non pris en charge", &mut skipped);
+            continue;
+        }
+
+        let (anchor, dereference, base_offset) = match entry.base.as_ref() {
+            Some(AddressBase::Module { module, offset }) => (
+                Anchor::Module {
+                    module: module.clone(),
+                    offset: 0,
+                },
+                false,
+                *offset,
+            ),
+            Some(AddressBase::Symbol {
+                symbol,
+                offset,
+                dereference,
+            }) => {
+                // Le symbole n'a de sens que si un scan de la table le produit.
+                let Some(scan) = scans.iter().find(|scan| &scan.symbol == symbol) else {
+                    refuse(
+                        &format!(
+                            "dépend du symbole « {symbol} », produit par un script d'auto-assembleur"
+                        ),
+                        &mut skipped,
+                    );
+                    continue;
+                };
+                (
+                    Anchor::Aob {
+                        module: scan.module.clone(),
+                        pattern: scan.pattern.clone(),
+                        offset: 0,
+                        occurrence: 0,
+                    },
+                    *dereference,
+                    *offset,
+                )
+            }
+            Some(AddressBase::Absolute { .. }) => {
+                refuse(
+                    "adresse absolue : elle ne survivrait pas au prochain lancement",
+                    &mut skipped,
+                );
+                continue;
+            }
+            None => {
+                refuse("aucune adresse", &mut skipped);
+                continue;
+            }
+        };
+
+        // Renversement des décalages, décalage de base en tête.
+        let mut offsets = vec![base_offset];
+        offsets.extend(entry.offsets.iter().rev().copied());
+
+        let mut id = slugify(&entry.description);
+        let mut suffix = 2;
+        while !used_ids.insert(id.clone()) {
+            id = format!("{}-{suffix}", slugify(&entry.description));
+            suffix += 1;
+        }
+
+        options.push(TrainerOption {
+            id,
+            category: "Importé".into(),
+            name: entry.description.clone(),
+            description: None,
+            value_type: entry.value_type.clone(),
+            control: Control::Number {
+                min: None,
+                max: None,
+                default: None,
+                freeze: true,
+            },
+            address: AddressRecipe {
+                anchor,
+                dereference,
+                offsets,
+            },
+            hotkey: None,
+        });
+    }
+
+    (
+        Profile {
+            format: FORMAT_VERSION,
+            app_id,
+            game: game.to_string(),
+            build_id,
+            author: None,
+            notes: Some("Importé d'une table Cheat Engine.".into()),
+            options,
+        },
+        skipped,
+    )
+}
+
 /// Dossier des profils installés localement.
 pub fn profiles_dir() -> Result<PathBuf> {
     let dir = crate::vault::config_dir()?.join("profiles");
@@ -377,6 +552,76 @@ mod tests {
                 },
             ],
         }
+    }
+
+    #[test]
+    fn converts_a_cheat_table_and_reverses_offset_order() {
+        let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="45">
+  <CheatEntries>
+    <CheatEntry>
+      <Description>"Enable"</Description>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>aobscanmodule(player,GameAssembly.dll,48 8B 89 40 01)
+registersymbol(player)</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <Description>"Vie"</Description>
+      <VariableType>Float</VariableType>
+      <Address>[player]+190</Address>
+      <Offsets><Offset>C0</Offset><Offset>18</Offset></Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <Description>"Or"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GameAssembly.dll+4194FD4</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <Description>"Orphelin"</Description>
+      <VariableType>Float</VariableType>
+      <Address>[inconnu]+10</Address>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>"#;
+
+        let table = CheatTable::parse(xml).expect("table");
+        let (profile, skipped) = from_cheat_table(&table, 1, "Jeu", Some("42".into()));
+
+        assert_eq!(profile.options.len(), 2, "deux entrées convertibles");
+
+        // Le symbole est remplacé par le motif qui le produit.
+        let vie = &profile.options[0];
+        assert_eq!(vie.name, "Vie");
+        assert!(
+            vie.address.dereference,
+            "les crochets imposent un déréférencement"
+        );
+        assert_eq!(
+            vie.address.anchor,
+            Anchor::Aob {
+                module: "GameAssembly.dll".into(),
+                pattern: "48 8B 89 40 01".into(),
+                offset: 0,
+                occurrence: 0
+            }
+        );
+        // [player]+190 avec les décalages CE [C0, 18] devient, dans notre ordre,
+        // 190 puis 18 puis C0.
+        assert_eq!(vie.address.offsets, vec![0x190, 0x18, 0xC0]);
+
+        assert_eq!(
+            profile.options[1].address.anchor,
+            Anchor::Module {
+                module: "GameAssembly.dll".into(),
+                offset: 0
+            }
+        );
+        assert_eq!(profile.options[1].address.offsets, vec![0x4194FD4]);
+
+        // Le script et l'entrée au symbole inconnu sont écartés, avec la raison.
+        assert_eq!(skipped.len(), 2);
+        assert!(skipped.iter().any(|s| s.reason.contains("inconnu")));
+        assert!(profile.validate().is_ok());
     }
 
     #[test]
