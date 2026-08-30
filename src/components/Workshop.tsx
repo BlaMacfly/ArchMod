@@ -159,6 +159,9 @@ export function Workshop({
   const [probeError, setProbeError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const [skipped, setSkipped] = useState<SkippedEntry[]>([]);
+  const [script, setScript] = useState("");
+  const [symbols, setSymbols] = useState<Record<string, number> | null>(null);
+  const [running, setRunning] = useState(false);
 
   const patch = (fields: Partial<Draft>) =>
     setDraft((current) => ({ ...current, ...fields }));
@@ -222,12 +225,43 @@ export function Workshop({
 
       onProfileChange({ ...profile, options: [...profile.options, ...added] });
       setSkipped(imported.skipped);
+      // Le script de la table est repris tel quel : c'est lui qui donnera vie
+      // aux symboles dont dépendent les entrées écartées.
+      if (imported.scripts.length > 0) setScript(imported.scripts[0]);
       onNotice(
         t("workshop.tableImported", {
           added: added.length,
           skipped: imported.skipped.length,
         }),
       );
+    } catch (error) {
+      onNotice(toTuxError(error).message);
+    }
+  };
+
+  const runScript = async () => {
+    setRunning(true);
+    try {
+      const report = await api.runScript(game.appId, script);
+      setSymbols(report.symbols);
+      onNotice(
+        t("script.done", {
+          count: Object.keys(report.symbols).length,
+          address: formatAddress(report.allocation),
+        }),
+      );
+    } catch (error) {
+      onNotice(toTuxError(error).message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const revertScript = async () => {
+    try {
+      const reverted = await api.revertScript(game.appId);
+      setSymbols(null);
+      onNotice(reverted ? t("script.reverted") : t("script.nothing"));
     } catch (error) {
       onNotice(toTuxError(error).message);
     }
@@ -450,6 +484,50 @@ export function Workshop({
             </span>
           )}
         </div>
+
+        {script && (
+          <details className="rounded-lg border border-ink-600 bg-ink-800 px-4 py-3">
+            <summary className="cursor-pointer text-sm text-mist-200">
+              {t("script.title")}
+            </summary>
+            <p className="mt-2 text-xs text-mist-500">{t("script.explain")}</p>
+            <textarea
+              value={script}
+              onChange={(event) => setScript(event.target.value)}
+              spellCheck={false}
+              rows={10}
+              className="mt-2 w-full rounded-lg border border-ink-600 bg-ink-900 px-3 py-2 font-mono text-xs text-mist-200 outline-none focus:border-brand-500/70"
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void runScript()}
+                disabled={running || !game.running}
+                className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-500 hover:text-ink-950 disabled:opacity-50"
+              >
+                {running ? t("script.running") : t("script.run")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void revertScript()}
+                className="rounded-lg border border-ink-600 px-3.5 py-1.5 text-xs text-mist-300 transition-colors hover:bg-white/5"
+              >
+                {t("script.revert")}
+              </button>
+              <span className="text-[11px] text-warn-500">{t("script.warning")}</span>
+            </div>
+
+            {symbols && Object.keys(symbols).length > 0 && (
+              <ul className="mt-3 space-y-1 font-mono text-xs">
+                {Object.entries(symbols).map(([name, address]) => (
+                  <li key={name} className="text-live-500">
+                    {name} = {formatAddress(address)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        )}
 
         {skipped.length > 0 && (
           <details className="rounded-lg border border-ink-600 bg-ink-800 px-4 py-3 text-xs">

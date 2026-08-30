@@ -4,6 +4,7 @@
 //! Toute la logique métier vit dans les modules dédiés ; on se contente ici de
 //! l'orchestration, de l'état partagé et de la conversion des erreurs.
 
+pub mod assembler;
 mod banners;
 pub mod cheat_table;
 pub mod engine;
@@ -17,6 +18,7 @@ mod prefix;
 pub mod profile;
 mod proton;
 pub mod scanner;
+pub mod script;
 mod steam_scanner;
 pub mod trainer;
 mod vault;
@@ -37,6 +39,7 @@ use pointer::{PointerPath, PointerScanReport, ScanOptions};
 use prefix::{Component, PrefixReport};
 use profile::{BuildMatch, Profile};
 use scanner::{CandidateView, Filter, ScanReport, Scanner};
+use script::EnableReport;
 use steam_scanner::SteamGame;
 use trainer::{ActivationReport, OptionStatus, Runtimes};
 use vault::{Settings, TrainerEntry, Vault};
@@ -56,6 +59,9 @@ struct AppState {
     runtimes: Runtimes,
     /// Recherches de valeurs en cours, avec le gel de leurs résultats.
     scanners: Mutex<HashMap<u32, ScanState>>,
+    /// Modifications posées par un script, conservées ici : l'interface ne doit
+    /// jamais pouvoir perdre de quoi remettre un jeu d'aplomb.
+    patches: Mutex<HashMap<u32, Vec<script::Patch>>>,
     steam_roots: Mutex<Vec<PathBuf>>,
 }
 
@@ -77,6 +83,7 @@ impl AppState {
             games: Mutex::new(Vec::new()),
             runtimes: Runtimes::default(),
             scanners: Mutex::new(HashMap::new()),
+            patches: Mutex::new(HashMap::new()),
             steam_roots: Mutex::new(Vec::new()),
         }
     }
@@ -505,6 +512,71 @@ async fn scan_freeze(
     }
 }
 
+/// Exécute la partie `[ENABLE]` d'un script d'auto-assembleur.
+///
+/// C'est ce qui donne vie aux symboles dont dépendent les entrées d'une table
+/// moderne : sans cette exécution, `[player]+184` ne désigne rien.
+#[tauri::command]
+async fn run_script(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+    source: String,
+) -> Result<EnableReport> {
+    let game = state.game(app_id).await?;
+    let pid = injector::game_process(&game).ok_or(error::TuxError::GameNotRunning {
+        name: game.name.clone(),
+    })?;
+
+    // Un script déjà posé est retiré avant d'en poser un autre : deux détours
+    // sur la même instruction laisseraient le jeu dans un état incohérent.
+    if let Some(previous) = state.patches.lock().await.remove(&app_id) {
+        let _ = script::disable(pid, &previous);
+    }
+
+    let report = tokio::task::spawn_blocking(move || script::enable(pid, &source))
+        .await
+        .map_err(|error| error::TuxError::Internal(error.to_string()))??;
+
+    injector::log(
+        &app,
+        Some(app_id),
+        injector::LogLevel::Success,
+        format!(
+            "Script exécuté : code injecté en {:#x}, {} symbole(s) publié(s).",
+            report.allocation,
+            report.symbols.len()
+        ),
+    );
+    state
+        .patches
+        .lock()
+        .await
+        .insert(app_id, report.patches.clone());
+    Ok(report)
+}
+
+/// Retire les modifications posées par un script.
+#[tauri::command]
+async fn revert_script(app: AppHandle, state: State<'_, AppState>, app_id: u32) -> Result<bool> {
+    let game = state.game(app_id).await?;
+    let Some(patches) = state.patches.lock().await.remove(&app_id) else {
+        return Ok(false);
+    };
+    let pid = injector::game_process(&game).ok_or(error::TuxError::GameNotRunning {
+        name: game.name.clone(),
+    })?;
+
+    script::disable(pid, &patches)?;
+    injector::log(
+        &app,
+        Some(app_id),
+        injector::LogLevel::Info,
+        "Script retiré, le code d'origine est restauré.".to_string(),
+    );
+    Ok(true)
+}
+
 /// Cherche par quel chemin de pointeurs une adresse volatile est atteinte.
 ///
 /// C'est l'opération qui transforme une trouvaille éphémère en profil : sans
@@ -696,6 +768,8 @@ async fn probe_recipe(
 struct CheatTableImport {
     profile: Profile,
     skipped: Vec<profile::Skipped>,
+    /// Scripts d'auto-assembleur de la table, prêts à être exécutés.
+    scripts: Vec<String>,
 }
 
 #[tauri::command]
@@ -715,7 +789,11 @@ async fn import_cheat_table(
         profile.options.len(),
         skipped.len()
     );
-    Ok(CheatTableImport { profile, skipped })
+    Ok(CheatTableImport {
+        scripts: table.scripts().into_iter().map(str::to_string).collect(),
+        profile,
+        skipped,
+    })
 }
 
 #[tauri::command]
@@ -814,6 +892,8 @@ pub fn run() {
             refresh_values,
             deactivate_profile,
             probe_recipe,
+            run_script,
+            revert_script,
             pointer_scan,
             pointer_verify,
             scan_start,

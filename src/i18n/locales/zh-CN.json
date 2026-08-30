@@ -228,5 +228,14 @@
   "pointer.mismatch": "该路径已不再指向同一地址 —— 请舍弃它。",
   "pointer.verifyNote": "越短的路径越可靠：它经过的结构更少，被游戏更新改变的风险更小。每条路径在添加前都会重新解析并验证。",
   "pointer.foundCategory": "已找到",
-  "pointer.foundName": "数值"
+  "pointer.foundName": "数值",
+  "script.title": "自动汇编脚本",
+  "script.explain": "该脚本创建表格条目所依赖的符号：它查找特征码，在游戏中写入一小段代码，并把一条指令改道到那里。仅支持 Cheat Engine 语言的一个很小子集 —— 其余部分会被拒绝，而不是靠猜测处理。",
+  "script.run": "运行脚本",
+  "script.running": "运行中…",
+  "script.revert": "撤销",
+  "script.warning": "会修改正在运行的游戏。请先存档。",
+  "script.done": "脚本已运行：发布 {count} 个符号，代码位于 {address}。",
+  "script.reverted": "脚本已撤销，原始代码已恢复。",
+  "script.nothing": "没有正在生效的脚本。"
 }

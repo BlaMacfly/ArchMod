@@ -228,5 +228,14 @@
   "pointer.mismatch": "Questo percorso non porta più allo stesso indirizzo — scartalo.",
   "pointer.verifyNote": "I percorsi corti sono più robusti: attraversano meno strutture che un aggiornamento potrebbe cambiare. Ogni percorso viene rieseguito e verificato prima di essere aggiunto.",
   "pointer.foundCategory": "Trovato",
-  "pointer.foundName": "Valore"
+  "pointer.foundName": "Valore",
+  "script.title": "Script di auto-assembler",
+  "script.explain": "Questo script crea i simboli da cui dipendono le voci della tabella: trova la sequenza, scrive un piccolo blocco di codice nel gioco e vi dirotta un'istruzione. È supportato solo un sottoinsieme ristretto del linguaggio di Cheat Engine — il resto viene rifiutato anziché indovinato.",
+  "script.run": "Esegui lo script",
+  "script.running": "Esecuzione…",
+  "script.revert": "Annulla",
+  "script.warning": "Modifica il gioco in esecuzione. Salva prima.",
+  "script.done": "Script eseguito: {count} simboli pubblicati, codice a {address}.",
+  "script.reverted": "Script annullato, codice originale ripristinato.",
+  "script.nothing": "Nessuno script era attivo."
 }

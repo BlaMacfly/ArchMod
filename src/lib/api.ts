@@ -4,6 +4,7 @@ import type {
   ActivationReport,
   CandidateView,
   CheatTableImport,
+  EnableReport,
   Filter,
   AddressRecipe,
   AppPaths,
@@ -105,6 +106,11 @@ export const api = {
     call<boolean>("deactivate_profile", { appId }),
   probeRecipe: (appId: number, recipe: AddressRecipe, valueType: ValueTypeRef) =>
     call<OptionStatus>("probe_recipe", { appId, recipe, valueType }),
+  // Scripts d'auto-assembleur
+  runScript: (appId: number, source: string) =>
+    call<EnableReport>("run_script", { appId, source }),
+  revertScript: (appId: number) => call<boolean>("revert_script", { appId }),
+
   // Recherche de pointeurs
   pointerScan: (appId: number, address: number, options?: PointerScanOptions) =>
     call<PointerScanReport>("pointer_scan", { appId, address, options: options ?? null }),

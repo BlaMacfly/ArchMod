@@ -228,5 +228,14 @@
   "pointer.mismatch": "This path no longer leads to the same address — discard it.",
   "pointer.verifyNote": "Shorter paths are more robust: they cross fewer structures that a game update could change. Each path is replayed and verified before being added.",
   "pointer.foundCategory": "Found",
-  "pointer.foundName": "Value"
+  "pointer.foundName": "Value",
+  "script.title": "Auto-assembler script",
+  "script.explain": "This script creates the symbols the table's entries depend on: it finds the pattern, writes a small block of code into the game and diverts an instruction towards it. Only a narrow subset of the Cheat Engine language is supported — anything else is refused rather than guessed.",
+  "script.run": "Run the script",
+  "script.running": "Running…",
+  "script.revert": "Revert",
+  "script.warning": "Modifies the running game. Save first.",
+  "script.done": "Script run: {count} symbols published, code at {address}.",
+  "script.reverted": "Script reverted, original code restored.",
+  "script.nothing": "No script was active."
 }

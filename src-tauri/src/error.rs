@@ -105,6 +105,9 @@ pub enum TuxError {
         wanted: usize,
     },
 
+    #[error("Assemblage impossible de « {line} » : {detail}")]
+    Assembly { line: String, detail: String },
+
     #[error("Profil de trainer invalide : {detail}")]
     Profile { detail: String },
 
@@ -158,6 +161,7 @@ impl TuxError {
             TuxError::SymbolUnresolved { .. } => "symbol_unresolved",
             TuxError::GameNotRunning { .. } => "game_not_running",
             TuxError::PatternNotFound { .. } => "pattern_not_found",
+            TuxError::Assembly { .. } => "assembly",
             TuxError::Profile { .. } => "profile",
             TuxError::CheatTable { .. } => "cheat_table",
             TuxError::Internal(_) => "internal",

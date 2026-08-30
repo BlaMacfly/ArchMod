@@ -243,6 +243,20 @@ export interface SkippedEntry {
 export interface CheatTableImport {
   profile: Profile;
   skipped: SkippedEntry[];
+  /** Scripts d'auto-assembleur trouvés dans la table. */
+  scripts: string[];
+}
+
+export interface Patch {
+  address: number;
+  original: number[];
+}
+
+export interface EnableReport {
+  /** Symboles publiés par le script, utilisables ensuite comme adresses. */
+  symbols: Record<string, number>;
+  patches: Patch[];
+  allocation: number;
 }
 
 // --- Recherche de valeurs --------------------------------------------------

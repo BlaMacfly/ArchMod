@@ -228,5 +228,14 @@
   "pointer.mismatch": "Este caminho não leva mais ao mesmo endereço — descarte-o.",
   "pointer.verifyNote": "Caminhos curtos são mais robustos: atravessam menos estruturas que uma atualização poderia mudar. Cada caminho é reexecutado e verificado antes de ser adicionado.",
   "pointer.foundCategory": "Encontrado",
-  "pointer.foundName": "Valor"
+  "pointer.foundName": "Valor",
+  "script.title": "Script de auto-assembler",
+  "script.explain": "Este script cria os símbolos dos quais as entradas da tabela dependem: encontra o padrão, escreve um pequeno bloco de código no jogo e desvia uma instrução para ele. Apenas um subconjunto restrito da linguagem do Cheat Engine é suportado — o resto é recusado em vez de adivinhado.",
+  "script.run": "Executar o script",
+  "script.running": "Executando…",
+  "script.revert": "Reverter",
+  "script.warning": "Modifica o jogo em execução. Salve antes.",
+  "script.done": "Script executado: {count} símbolos publicados, código em {address}.",
+  "script.reverted": "Script revertido, código original restaurado.",
+  "script.nothing": "Nenhum script estava ativo."
 }

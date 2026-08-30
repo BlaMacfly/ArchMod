@@ -115,6 +115,9 @@ pub struct CheatEntry {
     pub group_header: bool,
     pub scans: Vec<AobScan>,
     pub registered_symbols: Vec<String>,
+    /// Texte brut du script, nécessaire pour l'exécuter tel quel.
+    #[serde(default)]
+    pub script: Option<String>,
     pub children: Vec<CheatEntry>,
 }
 
@@ -182,6 +185,14 @@ impl CheatTable {
         let mut out = Vec::new();
         walk(&self.entries, &mut out);
         out
+    }
+
+    /// Scripts d'auto-assembleur de la table, dans l'ordre.
+    pub fn scripts(&self) -> Vec<&str> {
+        self.flatten()
+            .into_iter()
+            .filter_map(|entry| entry.script.as_deref())
+            .collect()
     }
 
     /// Tous les scans déclarés, quel que soit leur niveau d'imbrication.
@@ -256,6 +267,7 @@ fn parse_entry(node: roxmltree::Node) -> CheatEntry {
         group_header: text_of(node, "GroupHeader").as_deref() == Some("1"),
         scans: parse_scans(&joined),
         registered_symbols: parse_registered_symbols(&joined),
+        script: (!joined.trim().is_empty()).then(|| joined.clone()),
         children: node
             .children()
             .find(|child| child.has_tag_name("CheatEntries"))
@@ -508,6 +520,14 @@ registersymbol(aska)
     fn keeps_offsets_in_file_order() {
         let table = CheatTable::parse(TABLE).expect("table valide");
         assert_eq!(table.entries[1].offsets, vec![0x6C]);
+    }
+
+    #[test]
+    fn keeps_the_raw_script_for_execution() {
+        let table = CheatTable::parse(TABLE).expect("table valide");
+        let scripts = table.scripts();
+        assert_eq!(scripts.len(), 1);
+        assert!(scripts[0].contains("aobscanmodule(aska"));
     }
 
     #[test]

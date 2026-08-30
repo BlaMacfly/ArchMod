@@ -228,5 +228,14 @@
   "pointer.mismatch": "Ta ścieżka nie prowadzi już pod ten sam adres — odrzuć ją.",
   "pointer.verifyNote": "Krótsze ścieżki są pewniejsze: przechodzą przez mniej struktur, które aktualizacja mogłaby zmienić. Każda ścieżka jest odtwarzana i sprawdzana przed dodaniem.",
   "pointer.foundCategory": "Znalezione",
-  "pointer.foundName": "Wartość"
+  "pointer.foundName": "Wartość",
+  "script.title": "Skrypt auto-asemblera",
+  "script.explain": "Ten skrypt tworzy symbole, od których zależą wpisy tabeli: znajduje wzorzec, zapisuje w grze mały blok kodu i przekierowuje do niego instrukcję. Obsługiwany jest tylko wąski podzbiór języka Cheat Engine — reszta jest odrzucana, a nie zgadywana.",
+  "script.run": "Uruchom skrypt",
+  "script.running": "Wykonywanie…",
+  "script.revert": "Cofnij",
+  "script.warning": "Modyfikuje działającą grę. Najpierw zapisz stan.",
+  "script.done": "Skrypt wykonany: opublikowano {count} symboli, kod pod {address}.",
+  "script.reverted": "Skrypt cofnięty, przywrócono pierwotny kod.",
+  "script.nothing": "Żaden skrypt nie był aktywny."
 }

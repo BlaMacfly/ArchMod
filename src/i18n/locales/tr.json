@@ -228,5 +228,14 @@
   "pointer.mismatch": "Bu yol artık aynı adrese çıkmıyor — bir kenara bırak.",
   "pointer.verifyNote": "Kısa yollar daha sağlamdır: bir güncellemenin değiştirebileceği daha az yapıdan geçerler. Her yol eklenmeden önce yeniden çözülüp doğrulanır.",
   "pointer.foundCategory": "Bulundu",
-  "pointer.foundName": "Değer"
+  "pointer.foundName": "Değer",
+  "script.title": "Otomatik assembler betiği",
+  "script.explain": "Bu betik, tablodaki girdilerin dayandığı sembolleri oluşturur: deseni bulur, oyuna küçük bir kod bloğu yazar ve bir komutu oraya yönlendirir. Cheat Engine dilinin yalnızca dar bir alt kümesi destekleniyor — gerisi tahmin edilmek yerine reddediliyor.",
+  "script.run": "Betiği çalıştır",
+  "script.running": "Çalışıyor…",
+  "script.revert": "Geri al",
+  "script.warning": "Çalışan oyunu değiştirir. Önce kaydet.",
+  "script.done": "Betik çalıştırıldı: {count} sembol yayımlandı, kod {address} adresinde.",
+  "script.reverted": "Betik geri alındı, özgün kod geri yüklendi.",
+  "script.nothing": "Etkin bir betik yoktu."
 }

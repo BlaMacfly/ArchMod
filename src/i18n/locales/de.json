@@ -228,5 +228,14 @@
   "pointer.mismatch": "Dieser Pfad führt nicht mehr zur selben Adresse — verwirf ihn.",
   "pointer.verifyNote": "Kürzere Pfade sind robuster: sie durchqueren weniger Strukturen, die ein Update ändern könnte. Jeder Pfad wird vor dem Hinzufügen erneut aufgelöst und geprüft.",
   "pointer.foundCategory": "Gefunden",
-  "pointer.foundName": "Wert"
+  "pointer.foundName": "Wert",
+  "script.title": "Auto-Assembler-Skript",
+  "script.explain": "Dieses Skript erzeugt die Symbole, von denen die Einträge der Tabelle abhängen: es findet das Muster, schreibt einen kleinen Codeblock ins Spiel und lenkt eine Instruktion dorthin um. Nur ein enger Ausschnitt der Cheat-Engine-Sprache wird unterstützt — alles andere wird abgelehnt statt geraten.",
+  "script.run": "Skript ausführen",
+  "script.running": "Wird ausgeführt…",
+  "script.revert": "Rückgängig",
+  "script.warning": "Verändert das laufende Spiel. Vorher speichern.",
+  "script.done": "Skript ausgeführt: {count} Symbole veröffentlicht, Code bei {address}.",
+  "script.reverted": "Skript zurückgenommen, ursprünglicher Code wiederhergestellt.",
+  "script.nothing": "Es war kein Skript aktiv."
 }
