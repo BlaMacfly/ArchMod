@@ -138,9 +138,13 @@ Worth knowing: pressure-vessel places games in a **child user namespace** owned 
 | `aobscanmodule` pattern search | done — 102 MB scanned in ~110 ms |
 | Cheat Engine `.CT` table parser | done, wired into the Workshop |
 | Address resolution, pointer chains, value freezing | done |
-| Auto-assembler (`[ENABLE]` scripts, code injection) | to do |
+| **Value scanner** — search a number, refine as it changes | done |
+| **Pointer path search** — turn a heap address into a stable recipe | done |
+| **Auto-assembler** — run a table's `[ENABLE]` script | done, narrow subset |
 
-Without the auto-assembler, only entries whose address rests on a module — or on a symbol produced by a pattern scan — can be used. Modern tables lean heavily on scripts: ArchMod identifies those and says so, rather than failing silently.
+The value scanner works the way Cheat Engine's does: search a number you can read on screen, change it in game, search again, and the intersection isolates the address. A heap address only holds for one session, so the pointer scanner walks backwards from it — who points at it, who points at that — until it reaches a module, producing a recipe that survives a restart.
+
+The auto-assembler covers **only** the forms a capture hook needs, and refuses everything else with a precise message rather than guessing: a mis-encoded instruction does not produce an error, it crashes the game. It does not allocate memory the way Cheat Engine does — calling `mmap` inside the game would mean suspending it — so it looks for an unused padding area that is both executable and writable, and says so when none fits.
 
 ## Architecture
 
@@ -155,7 +159,11 @@ src-tauri/src/
 ├── injector.rs        launch plans, async execution, log streaming, shutdown
 ├── prefix.rs          prefix diagnosis: .NET, Wine-Mono, Windows version
 ├── memory.rs          game memory read/write, byte-pattern search (AOB)
+├── scanner.rs         value search and refinement
+├── pointer.rs         pointer path search, from a heap value to a static anchor
 ├── hook.rs            analysing and placing code detours
+├── assembler.rs       minimal x86-64 assembler for capture hooks
+├── script.rs          executes a table's [ENABLE] auto-assembler script
 ├── cheat_table.rs     Cheat Engine (.CT) table parser
 ├── profile.rs         community profile format, validation, storage
 ├── trainer.rs         profile execution: resolution, values, freezing

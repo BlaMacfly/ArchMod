@@ -167,7 +167,9 @@ pas — aucun réglage système à modifier.
 | Recherche de motifs `aobscanmodule` | fait — 102 Mo balayés en ~110 ms |
 | Parseur de tables `.CT` | fait |
 | Résolution des adresses, chaînes de pointeurs, gel des valeurs | fait |
-| Auto-assembleur (scripts `[ENABLE]`, injection de code) | à faire |
+| Recherche de valeurs, façon Cheat Engine | fait |
+| Recherche de chemins de pointeurs | fait |
+| Auto-assembleur (scripts `[ENABLE]`, injection de code) | fait, sous-ensemble restreint |
 
 Sans auto-assembleur, seules les entrées dont l'adresse repose sur un module ou
 sur un symbole issu d'un scan sont exploitables. Les tables modernes s'appuient
