@@ -1,6 +1,6 @@
 [package]
 name = "archmod"
-version = "0.3.0"
+version = "0.4.0"
 description = "ArchMod - gestionnaire de trainers natif pour jeux Steam-Proton sous Linux"
 authors = ["ArchMod contributors"]
 edition = "2021"
