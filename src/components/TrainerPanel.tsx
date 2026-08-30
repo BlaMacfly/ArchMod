@@ -7,6 +7,7 @@ import {
   Zap,
 } from "lucide-react";
 import { formatAddress, makeValue, valueNumber } from "../lib/api";
+import { useI18n } from "../i18n";
 import type {
   ActivationReport,
   OptionStatus,
@@ -203,6 +204,7 @@ function OptionControl({
   onSet,
   onClear,
 }: OptionControlProps) {
+  const { t } = useI18n();
   const active = status?.active ?? false;
   const control = option.control;
 
@@ -240,7 +242,7 @@ function OptionControl({
               disabled ? "cursor-not-allowed opacity-50" : "",
             ].join(" ")}
           >
-            {wanted ? "On" : "Off"}
+            {wanted ? t("panel.on") : t("panel.off")}
           </button>
         ))}
       </div>
@@ -255,7 +257,7 @@ function OptionControl({
         onClick={() => onSet(option)}
         className="shrink-0 rounded-lg bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-500 hover:text-ink-950 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {busy ? "…" : "Appliquer"}
+        {busy ? "…" : t("panel.apply")}
       </button>
     );
   }
@@ -288,7 +290,7 @@ function OptionControl({
             : "bg-brand-600 text-white hover:bg-brand-500 hover:text-ink-950",
         ].join(" ")}
       >
-        {active ? "Gelé" : "Appliquer"}
+        {active ? t("panel.frozen") : t("panel.apply")}
       </button>
     </div>
   );

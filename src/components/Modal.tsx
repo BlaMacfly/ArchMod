@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { useI18n } from "../i18n";
 
 interface ModalProps {
   title: string;
@@ -11,6 +12,7 @@ interface ModalProps {
 
 /** Boîte de dialogue centrée, fermable au clavier (Échap) ou au clic extérieur. */
 export function Modal({ title, onClose, children, footer, width }: ModalProps) {
+  const { t } = useI18n();
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -41,7 +43,7 @@ export function Modal({ title, onClose, children, footer, width }: ModalProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("dialog.close")}
             className="rounded-md p-1 text-mist-400 transition-colors hover:bg-white/5 hover:text-mist-100"
           >
             <X className="h-4 w-4" />

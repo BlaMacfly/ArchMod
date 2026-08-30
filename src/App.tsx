@@ -13,6 +13,7 @@ import { useLogs } from "./hooks/useLogs";
 import { api, toTuxError } from "./lib/api";
 import { basename } from "./lib/format";
 import type { AppPaths, Dependencies, Settings, TuxError } from "./lib/types";
+import { useI18n } from "./i18n";
 
 const DEFAULT_SETTINGS: Settings = {
   allowNetworkArtwork: true,
@@ -21,6 +22,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 export default function App() {
+  const { t } = useI18n();
   const { lines, unread, append, clear, setCollapsed } = useLogs();
   const noticeFromEvent = useCallback(
     (message: string) => append("info", message),
@@ -88,8 +90,8 @@ export default function App() {
   useEffect(() => {
     if (greeted.current) return;
     greeted.current = true;
-    append("info", "ArchMod prêt. Sélectionne un jeu pour commencer.");
-  }, [append]);
+    append("info", t("app.ready"));
+  }, [append, t]);
 
   const toggleConsole = () => {
     setConsoleCollapsed((collapsed) => {
@@ -111,8 +113,14 @@ export default function App() {
 
       const entry = await api.setTrainer(selected.appId, chosen);
       patchGame(selected.appId, { trainer: entry, trainerMissing: false });
-      append("success", `Trainer « ${basename(entry.path)} » associé à ${selected.name}.`);
-      showNotice("Trainer importé.");
+      append(
+        "success",
+        t("app.trainerLinked", {
+          name: basename(entry.path),
+          game: selected.name,
+        }),
+      );
+      showNotice(t("app.trainerImported"));
     } catch (caught) {
       reportError(caught);
     }
@@ -123,7 +131,7 @@ export default function App() {
     try {
       await api.removeTrainer(selected.appId);
       patchGame(selected.appId, { trainer: null, trainerMissing: false });
-      append("info", `Trainer dissocié de ${selected.name}.`);
+      append("info", t("app.trainerUnlinked", { game: selected.name }));
     } catch (caught) {
       reportError(caught);
     }
@@ -154,7 +162,7 @@ export default function App() {
       const stopped = await api.stopTrainer(appId);
       if (!stopped) {
         patchGame(appId, { trainerRunning: false });
-        append("info", "Aucun trainer actif à arrêter.");
+        append("info", t("app.noTrainerRunning"));
       }
     } catch (caught) {
       reportError(caught);
@@ -181,8 +189,8 @@ export default function App() {
       append(
         "success",
         backup
-          ? `Configuration réinitialisée. Ancien fichier conservé : ${backup}`
-          : "Configuration réinitialisée.",
+          ? t("app.configResetBackup", { path: backup })
+          : t("app.configReset"),
       );
       await scan();
     } catch (caught) {
@@ -204,7 +212,7 @@ export default function App() {
         <div className="leading-tight">
           <h1 className="text-sm font-bold tracking-wide text-mist-100">ArchMod</h1>
           <p className="text-[11px] text-mist-500">
-            Trainers Windows dans tes préfixes Proton
+            {t("app.tagline")}
           </p>
         </div>
 
@@ -221,7 +229,7 @@ export default function App() {
                 dependencies.protontricks ??
                 (dependencies.protontricksFlatpak
                   ? "protontricks (Flatpak)"
-                  : "protontricks absent")
+                  : t("settings.notInstalled"))
               }
             >
               {dependencies.ready ? (
@@ -232,14 +240,14 @@ export default function App() {
               {dependencies.protontricks || dependencies.protontricksFlatpak
                 ? "protontricks"
                 : dependencies.wine
-                  ? "wine seul"
-                  : "dépendances manquantes"}
+                  ? t("app.wineOnly")
+                  : t("app.depsMissingShort")}
             </span>
           )}
           <button
             type="button"
             onClick={() => setShowSettings(true)}
-            title="Réglages"
+            title={t("app.settings")}
             className="rounded-lg border border-ink-600 bg-ink-800 p-2 text-mist-400 transition-colors hover:text-mist-100"
           >
             <Settings2 className="h-4 w-4" />
@@ -250,14 +258,14 @@ export default function App() {
       {configError && (
         <Alert
           tone="error"
-          title="Configuration illisible"
+          title={t("app.configBrokenTitle")}
           action={
             <button
               type="button"
               onClick={repairConfig}
               className="shrink-0 rounded-lg border border-halt-500/40 px-3 py-1.5 text-xs font-medium text-halt-500 transition-colors hover:bg-halt-500/10"
             >
-              Réinitialiser
+              {t("app.reset")}
             </button>
           }
         >
@@ -267,8 +275,8 @@ export default function App() {
       )}
 
       {depsMissing && (
-        <Alert tone="warn" title="Aucun backend d'injection disponible">
-          Installe les dépendances avec&nbsp;:{" "}
+        <Alert tone="warn" title={t("app.depsMissingTitle")}>
+          {t("app.depsMissingHint")}{" "}
           <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-mist-300">
             {dependencies?.installCommand}
           </code>
@@ -311,9 +319,9 @@ export default function App() {
 
       {confirmation && (
         <ConfirmDialog
-          title="Le jeu ne semble pas lancé"
+          title={t("dialog.notRunningTitle")}
           message={confirmation.message}
-          confirmLabel="Lancer quand même"
+          confirmLabel={t("dialog.confirmLaunch")}
           onCancel={() => setConfirmation(null)}
           onConfirm={() => {
             const { appId } = confirmation;
@@ -331,7 +339,7 @@ export default function App() {
           onClose={() => setShowSettings(false)}
           onSaved={(saved) => {
             setSettings(saved);
-            append("info", `Backend d'injection : ${saved.backend}.`);
+            append("info", t("app.backendChanged", { backend: saved.backend }));
           }}
           onNotice={showNotice}
         />

@@ -50,4 +50,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Une traduction incomplète passerait inaperçue : l'application retombe
+      # silencieusement sur l'anglais.
+      - run: npm run check:locales
       - run: npm run build

@@ -1,4 +1,5 @@
 import { Activity, CircleSlash } from "lucide-react";
+import { useI18n } from "../i18n";
 
 interface StatusPillProps {
   running: boolean;
@@ -18,7 +19,10 @@ export function StatusPill({
   compact,
   neutralWhenOff,
 }: StatusPillProps) {
-  const text = running ? (labels?.on ?? "En cours d'exécution") : (labels?.off ?? "Fermé");
+  const { t } = useI18n();
+  const text = running
+    ? (labels?.on ?? t("main.statusRunning"))
+    : (labels?.off ?? t("main.statusClosed"));
   const Icon = running ? Activity : CircleSlash;
 
   return (

@@ -18,6 +18,7 @@ import { PrefixCard } from "./PrefixCard";
 import { TrainerPanel } from "./TrainerPanel";
 import { Workshop } from "./Workshop";
 import { useTrainer } from "../hooks/useTrainer";
+import { useI18n, type TranslationKey } from "../i18n";
 import { useBanner } from "../hooks/useBanner";
 import { api, formatCommand, toTuxError } from "../lib/api";
 import { accentFromAppId, basename, formatBytes, formatRelative } from "../lib/format";
@@ -51,6 +52,7 @@ export function MainView({
 
   const [command, setCommand] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const { t } = useI18n();
   const [tab, setTab] = useState<Onglet>("lanceur");
 
   const trainer = useTrainer(
@@ -87,14 +89,15 @@ export function MainView({
   }, [game?.appId, game?.trainer?.path, game?.trainerMissing]);
 
   const launchState = useMemo(() => {
-    if (!game) return { label: "Sélectionne un jeu", disabled: true };
-    if (game.trainerRunning) return { label: "Arrêter le trainer", disabled: false };
-    if (!game.trainer) return { label: "Aucun trainer lié", disabled: true };
-    if (game.trainerMissing) return { label: "Trainer introuvable", disabled: true };
+    if (!game) return { label: t("main.selectGame"), disabled: true };
+    if (game.trainerRunning) return { label: t("main.stop"), disabled: false };
+    if (!game.trainer) return { label: t("main.noTrainerButton"), disabled: true };
+    if (game.trainerMissing)
+      return { label: t("main.trainerMissingButton"), disabled: true };
     if (dependencies && !dependencies.ready)
-      return { label: "Dépendances manquantes", disabled: true };
-    return { label: "Lancer le trainer", disabled: false };
-  }, [game, dependencies]);
+      return { label: t("main.depsMissingButton"), disabled: true };
+    return { label: t("main.launch"), disabled: false };
+  }, [game, dependencies, t]);
 
   if (!game) {
     return (
@@ -102,12 +105,9 @@ export function MainView({
         <div className="max-w-sm space-y-3">
           <img src={logoUrl} alt="" className="mx-auto h-20 w-20 opacity-90" />
           <h2 className="text-lg font-semibold text-mist-100">
-            Choisis un jeu dans la liste
+            {t("main.emptyTitle")}
           </h2>
-          <p className="text-sm text-mist-400">
-            ArchMod associe un trainer Windows à chaque jeu Steam et l'injecte dans
-            son préfixe Proton, sans passer par un terminal.
-          </p>
+          <p className="text-sm text-mist-400">{t("main.emptyText")}</p>
         </div>
       </section>
     );
@@ -116,9 +116,9 @@ export function MainView({
   const copy = async (value: string, label: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      onNotice(`${label} copié dans le presse-papiers.`);
+      onNotice(t("app.copied", { what: label }));
     } catch {
-      onNotice("Copie impossible : le presse-papiers est indisponible.");
+      onNotice(t("app.copyFailed"));
     }
   };
 
@@ -170,13 +170,17 @@ export function MainView({
         <div className="flex flex-wrap items-center gap-2.5">
           <StatusPill
             running={game.running}
-            title={game.running ? "Processus du jeu détecté" : "Aucun processus détecté"}
+            title={
+              game.running
+                ? t("main.processDetected")
+                : t("main.processNotDetected")
+            }
           />
           <StatusPill
             running={game.trainerRunning}
             compact
             neutralWhenOff
-            labels={{ on: "Trainer actif", off: "Trainer arrêté" }}
+            labels={{ on: t("main.trainerActive"), off: t("main.trainerStopped") }}
           />
           <span className="rounded-full border border-ink-600 bg-ink-800 px-3 py-1 text-xs text-mist-400">
             AppID {game.appId}
@@ -186,15 +190,15 @@ export function MainView({
             {formatBytes(game.sizeOnDisk)}
           </span>
           <span className="rounded-full border border-ink-600 bg-ink-800 px-3 py-1 text-xs text-mist-400">
-            Joué {formatRelative(game.lastPlayed)}
+            {t("main.played", { when: formatRelative(game.lastPlayed) })}
           </span>
           {!game.prefixPath && (
             <span
               className="inline-flex items-center gap-1.5 rounded-full border border-warn-500/30 bg-warn-500/10 px-3 py-1 text-xs text-warn-500"
-              title="Le préfixe est créé au premier lancement du jeu via Steam"
+              title={t("main.noPrefixHint")}
             >
               <AlertTriangle className="h-3.5 w-3.5" />
-              Pas de préfixe Proton
+              {t("main.noPrefix")}
             </span>
           )}
         </div>
@@ -206,7 +210,7 @@ export function MainView({
               key={value}
               type="button"
               onClick={() => setTab(value)}
-              title={hint}
+              title={t(hint)}
               className={[
                 "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 tab === value
@@ -214,7 +218,7 @@ export function MainView({
                   : "text-mist-400 hover:bg-white/5 hover:text-mist-100",
               ].join(" ")}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -240,7 +244,7 @@ export function MainView({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-mist-400">
-                Trainer associé
+                {t("main.trainerCard")}
               </h2>
               {game.trainer ? (
                 <>
@@ -254,14 +258,16 @@ export function MainView({
                     {game.trainer.path}
                   </p>
                   <p className="mt-2 text-xs text-mist-500">
-                    Ajouté {formatRelative(game.trainer.addedAt)} · lancé{" "}
-                    {game.trainer.launchCount} fois · dernier lancement{" "}
-                    {formatRelative(game.trainer.lastLaunchedAt)}
+                    {t("main.trainerStats", {
+                      added: formatRelative(game.trainer.addedAt),
+                      count: game.trainer.launchCount,
+                      last: formatRelative(game.trainer.lastLaunchedAt),
+                    })}
                   </p>
                 </>
               ) : (
                 <p className="mt-1.5 text-sm text-mist-400">
-                  Aucun trainer n'est encore lié à ce jeu.
+                  {t("main.noTrainerLinked")}
                 </p>
               )}
             </div>
@@ -273,14 +279,14 @@ export function MainView({
                 className="inline-flex items-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-3.5 py-2 text-sm font-medium text-mist-100 transition-all hover:border-brand-500/50 hover:bg-ink-700 active:scale-[0.98]"
               >
                 <FileDown className="h-4 w-4" />
-                {game.trainer ? "Changer" : "Importer un trainer (.exe)"}
+                {game.trainer ? t("main.change") : t("main.import")}
               </button>
               {game.trainer && (
                 <>
                   <button
                     type="button"
                     onClick={() => reveal(game.trainer!.path)}
-                    title="Afficher dans le gestionnaire de fichiers"
+                    title={t("main.reveal")}
                     className="rounded-lg border border-ink-600 bg-ink-800 p-2 text-mist-400 transition-colors hover:text-mist-100"
                   >
                     <FolderOpen className="h-4 w-4" />
@@ -288,7 +294,7 @@ export function MainView({
                   <button
                     type="button"
                     onClick={onRemoveTrainer}
-                    title="Retirer l'association"
+                    title={t("main.unlink")}
                     className="rounded-lg border border-ink-600 bg-ink-800 p-2 text-mist-400 transition-colors hover:border-halt-500/40 hover:text-halt-500"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -301,8 +307,7 @@ export function MainView({
           {game.trainerMissing && (
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-halt-500/30 bg-halt-500/10 px-3 py-2 text-sm text-halt-500">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              Le fichier n'existe plus à cet emplacement. Réimporte le trainer pour
-              rétablir le lien.
+              {t("main.trainerMissingWarning")}
             </p>
           )}
         </div>
@@ -326,14 +331,13 @@ export function MainView({
           ) : (
             <Play className="h-5 w-5 fill-current" />
           )}
-          {busy ? "Patiente…" : launchState.label}
+          {busy ? t("main.working") : launchState.label}
         </button>
 
         {!game.running && game.trainer && !game.trainerMissing && (
           <p className="flex items-center gap-2 text-xs text-warn-500">
             <AlertTriangle className="h-3.5 w-3.5" />
-            Le jeu n'est pas détecté : lance-le depuis Steam avant d'injecter le
-            trainer (une confirmation te sera demandée).
+            {t("main.notRunningWarning")}
           </p>
         )}
 
@@ -344,15 +348,29 @@ export function MainView({
         <details className="group rounded-card border border-ink-700 bg-ink-850">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium text-mist-300 transition-colors hover:text-mist-100">
             <Terminal className="h-4 w-4" />
-            Commande et chemins
+            {t("main.details")}
           </summary>
           <div className="space-y-3 border-t border-ink-700 px-5 py-4 text-xs">
-            <Row label="Commande" value={command ?? commandError ?? "—"} onCopy={command ? () => copy(command, "Commande") : undefined} mono />
-            <Row label="Installation" value={game.installPath} onCopy={() => copy(game.installPath, "Chemin")} mono />
-            <Row label="Bibliothèque" value={game.libraryPath} mono />
             <Row
-              label="Préfixe Proton"
-              value={game.prefixPath ?? "non créé (lance le jeu une fois)"}
+              label={t("main.rowCommand")}
+              value={command ?? commandError ?? "—"}
+              onCopy={
+                command
+                  ? () => copy(command, t("main.rowCommand"))
+                  : undefined
+              }
+              mono
+            />
+            <Row
+              label={t("main.rowInstall")}
+              value={game.installPath}
+              onCopy={() => copy(game.installPath, t("main.rowInstall"))}
+              mono
+            />
+            <Row label={t("main.rowLibrary")} value={game.libraryPath} mono />
+            <Row
+              label={t("main.rowPrefix")}
+              value={game.prefixPath ?? t("main.prefixMissing")}
               mono
             />
           </div>
@@ -372,6 +390,7 @@ interface RowProps {
 }
 
 function Row({ label, value, mono, onCopy }: RowProps) {
+  const { t } = useI18n();
   return (
     <div className="flex items-start gap-3">
       <span className="w-28 shrink-0 pt-0.5 uppercase tracking-wider text-mist-500">
@@ -389,7 +408,7 @@ function Row({ label, value, mono, onCopy }: RowProps) {
         <button
           type="button"
           onClick={onCopy}
-          title="Copier"
+          title={t("main.copy")}
           className="shrink-0 rounded p-1 text-mist-500 transition-colors hover:bg-white/5 hover:text-mist-100"
         >
           <Copy className="h-3.5 w-3.5" />
@@ -410,20 +429,24 @@ function ImportButton({
   trainer: ReturnType<typeof useTrainer>;
   onNotice: (message: string) => void;
 }) {
+  const { t } = useI18n();
   const importer = async () => {
     try {
       const chosen = await openFileDialog({
         multiple: false,
         directory: false,
-        title: "Choisir un profil ArchMod",
-        filters: [{ name: "Profil ArchMod", extensions: ["json"] }],
+        title: t("panel.importProfile"),
+        filters: [{ name: "ArchMod", extensions: ["json"] }],
       });
       if (typeof chosen !== "string") return;
 
       const profile = await api.importProfile(chosen);
       await trainer.refreshProfiles();
       onNotice(
-        `Profil « ${profile.game} » importé : ${profile.options.length} option(s).`,
+        t("panel.profileImported", {
+          game: profile.game,
+          count: profile.options.length,
+        }),
       );
     } catch (error) {
       onNotice(toTuxError(error).message);
@@ -437,17 +460,17 @@ function ImportButton({
       className="inline-flex items-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-3.5 py-2 text-sm font-medium text-mist-100 transition-colors hover:border-brand-500/50 hover:bg-ink-700"
     >
       <FileDown className="h-4 w-4" />
-      Importer un profil (.json)
+      {t("panel.importProfile")}
     </button>
   );
 }
 
 type Onglet = "lanceur" | "panneau" | "atelier";
 
-const ONGLETS: [Onglet, string, string][] = [
-  ["lanceur", "Lanceur", "Lancer un trainer Windows dans le préfixe Proton"],
-  ["panneau", "Panneau", "Activer les options d'un profil communautaire"],
-  ["atelier", "Atelier", "Créer un profil : éprouver une adresse et l'enregistrer"],
+const ONGLETS: [Onglet, TranslationKey, TranslationKey][] = [
+  ["lanceur", "main.tabLauncher", "main.tabLauncherHint"],
+  ["panneau", "main.tabPanel", "main.tabPanelHint"],
+  ["atelier", "main.tabWorkshop", "main.tabWorkshopHint"],
 ];
 
 interface PanneauSectionProps {
@@ -458,19 +481,16 @@ interface PanneauSectionProps {
 
 /** Choix du profil, puis panneau d'options une fois celui-ci chargé. */
 function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
+  const { t } = useI18n();
   const { entries, active, report, busy } = trainer;
 
   if (!game.running) {
     return (
       <div className="rounded-card border border-warn-500/30 bg-warn-500/10 px-5 py-4 text-sm">
         <p className="font-medium text-warn-500">
-          « {game.name} » n'est pas en cours d'exécution.
+          {t("panel.gameNotRunning", { game: game.name })}
         </p>
-        <p className="mt-1 text-mist-400">
-          Les adresses mémoire n'existent que pendant l'exécution du jeu. Lance-le
-          depuis Steam — ou sélectionne un autre jeu dans la liste, le filtre
-          « Actifs » ne montre que ceux qui tournent.
-        </p>
+        <p className="mt-1 text-mist-400">{t("panel.gameNotRunningHint")}</p>
       </div>
     );
   }
@@ -479,12 +499,10 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
     return (
       <div className="rounded-card border border-ink-700 bg-ink-850 px-5 py-8 text-center">
         <p className="text-sm text-mist-300">
-          Aucun profil installé pour « {game.name} ».
+          {t("panel.noProfile", { game: game.name })}
         </p>
         <p className="mx-auto mt-2 max-w-md text-xs text-mist-500">
-          Un profil décrit les options du jeu et où trouver leurs valeurs en
-          mémoire. Récupère-en un dans le dépôt communautaire, ou crée le tien
-          depuis l'onglet Atelier.
+          {t("panel.noProfileHint")}
         </p>
         <div className="mt-4">
           <ImportButton trainer={trainer} onNotice={onNotice} />
@@ -507,17 +525,21 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
           >
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-mist-100">
-                {profile.game} — {profile.options.length} option(s)
+                {profile.game} — {t("panel.optionCount", { count: profile.options.length })}
               </p>
               <p className="mt-0.5 text-xs text-mist-500">
-                {profile.author ? `par ${profile.author} · ` : ""}
-                build {profile.buildId ?? "non précisé"}
+                {profile.author ? t("panel.byAuthor", { author: profile.author }) : ""}
+                {profile.buildId
+                  ? t("panel.forBuild", { build: profile.buildId })
+                  : t("panel.buildUnknown")}
               </p>
               {buildMatch.state === "outdated" && (
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-warn-500">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  Écrit pour le build {buildMatch.detail.profile}, tu es sur{" "}
-                  {buildMatch.detail.installed} — des adresses peuvent avoir bougé.
+                  {t("panel.outdated", {
+                    profile: buildMatch.detail.profile,
+                    installed: buildMatch.detail.installed,
+                  })}
                 </p>
               )}
             </div>
@@ -527,7 +549,7 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
               onClick={() => void trainer.activate(profile)}
               className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 hover:text-ink-950 disabled:opacity-50"
             >
-              {busy === "profil" ? "Chargement…" : "Charger"}
+              {busy === "profil" ? t("panel.loading") : t("panel.load")}
             </button>
           </li>
         ))}
@@ -540,21 +562,23 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
     <div className="space-y-3">
       <div className="flex items-center gap-3 rounded-card border border-ink-700 bg-ink-850 px-5 py-3">
         <span className="min-w-0 flex-1 text-sm text-mist-300">
-          {report.resolved} option(s) prête(s)
+          {t("panel.resolved", { count: report.resolved })}
           {report.failed > 0 && (
-            <span className="text-warn-500"> · {report.failed} en échec</span>
+            <span className="text-warn-500">
+              {t("panel.failed", { count: report.failed })}
+            </span>
           )}
-          <span className="text-mist-500"> · PID {report.pid}</span>
+          <span className="text-mist-500">{t("panel.pid", { pid: report.pid })}</span>
         </span>
         <button
           type="button"
           onClick={() => {
             void trainer.deactivate();
-            onNotice("Profil déchargé, les gels sont levés.");
+            onNotice(t("panel.unloaded"));
           }}
           className="shrink-0 rounded-lg border border-ink-600 px-3 py-1.5 text-xs text-mist-300 transition-colors hover:bg-white/5"
         >
-          Décharger
+          {t("panel.unload")}
         </button>
       </div>
 

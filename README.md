@@ -1,181 +1,179 @@
 <div align="center">
   <img src="src/assets/logo.png" alt="ArchMod" width="120" />
   <h1>ArchMod</h1>
-  <p><strong>Un WeMod natif pour Linux.</strong> Un panneau de triche pour tes jeux Steam sous Proton : lance tes trainers Windows dans le bon préfixe, ou active directement des options écrites par la communauté.</p>
+  <p><strong>A native WeMod for Linux.</strong> A cheat panel for your Steam games under Proton: run your Windows trainers in the right prefix, or switch on memory options written by the community.</p>
   <p>
     <img alt="Rust" src="https://img.shields.io/badge/Rust-2021-000?logo=rust" />
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri" />
     <img alt="React" src="https://img.shields.io/badge/React-19-149ECA?logo=react" />
-    <img alt="Licence" src="https://img.shields.io/badge/licence-MIT-blue" />
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-blue" />
   </p>
+  <p><a href="README.fr.md">🇫🇷 Lire en français</a></p>
 </div>
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="Interface d'ArchMod : bibliothèque Steam, fiche de jeu et console de logs" width="900" />
+  <img src="docs/screenshot.png" alt="ArchMod: Steam library, game details and live console" width="900" />
 </p>
 
 ---
 
-## Ce que ça fait
+## What it does
 
-ArchMod se compose de trois couches, utilisables indépendamment.
+ArchMod has three layers, each usable on its own.
 
-### 1. Lanceur de trainers Windows — *fonctionnel*
+### 1. Windows trainer launcher — *working*
 
-- **Scan de la bibliothèque Steam** — toutes les racines connues (native, `~/.steam/root`, Flatpak), tous les disques déclarés dans `libraryfolders.vdf`, tous les `appmanifest_*.acf`.
-- **Coffre de trainers** — chaque AppID est associé à un `.exe` (FLiNG, MrAntiFun, Cheat Happens…) dans `~/.config/ArchMod/config.json`.
-- **Injection dans le préfixe Proton** — `protontricks`, avec deux replis natifs s'il est absent.
-- **Préparation du préfixe** — diagnostic de ce qui manque pour qu'un trainer démarre (.NET contre Wine-Mono, version de Windows déclarée, variante de Proton) et installation en un clic.
-- **Détection du jeu en cours** et **console temps réel**, sortie de Wine diffusée ligne par ligne.
+- **Steam library scan** — every known root (native, `~/.steam/root`, Flatpak), every drive declared in `libraryfolders.vdf`, every `appmanifest_*.acf`.
+- **Trainer vault** — each AppID is bound to an `.exe` (FLiNG, MrAntiFun, Cheat Happens…) in `~/.config/ArchMod/config.json`.
+- **Injection into the Proton prefix** — `protontricks`, with two native fallbacks when it is absent.
+- **Prefix preparation** — diagnoses what stops a trainer from starting (.NET versus Wine-Mono, the reported Windows version, the Proton flavour) and fixes it in one click.
+- **Live game detection** and a **real-time console**, Wine output streamed line by line.
 
-### 2. Moteur d'options natif — *en cours*
+### 2. Native option engine — *in progress*
 
-Lire et écrire la mémoire d'un jeu Proton **sans Wine ni Cheat Engine** : un jeu
-lancé par Steam reste un processus Linux ordinaire. Recherche de motifs d'octets,
-résolution des chaînes de pointeurs, gel de valeurs, pose de détours dans le code.
+Read and write a Proton game's memory **without Wine or Cheat Engine**: a game started by Steam is an ordinary Linux process. Byte-pattern scanning, pointer-chain resolution, value freezing, and code detours.
 
-### 3. Profils communautaires — *fondation posée*
+### 3. Community profiles — *foundation laid*
 
-Le travail de recherche d'adresses ne peut pas reposer sur une seule personne.
-ArchMod fournit le **panneau** au joueur et le **format d'échange** à ceux qui
-savent chercher avec Cheat Engine, GameConqueror ou PINCE. Les profils vivent
-dans [`profiles/`](profiles/), un par version de jeu, et se partagent par pull
-request — la CI valide chaque contribution automatiquement.
+Finding memory addresses cannot rest on one person. ArchMod gives the **panel** to the player and the **exchange format** to whoever knows how to search with Cheat Engine, GameConqueror or PINCE. Profiles live in [`profiles/`](profiles/), one per game build, and are shared through pull requests — CI validates every contribution automatically.
 
-> Personne n'a à refaire le travail d'un autre : un profil écrit une fois pour
-> un build donné sert à tous ceux qui jouent au même build.
+> Nobody has to redo someone else's work: a profile written once for a given build serves everyone playing that build.
 
-## Prérequis
+## Requirements
 
-| Composant | Rôle | Paquet Arch / CachyOS |
+| Component | Purpose | Arch / CachyOS package |
 |---|---|---|
-| `protontricks` | méthode d'injection de référence | `protontricks` |
-| `wine` | repli de dernier recours | `wine` (dépôt `multilib`) |
-| `webkit2gtk-4.1` | moteur de rendu de Tauri v2 | `webkit2gtk-4.1` |
-| Rust ≥ 1.77 | compilation du backend | `rustup` ou `rust` |
-| Node ≥ 18 | compilation du frontend | `nodejs` `npm` |
+| `protontricks` | reference injection method | `protontricks` |
+| `wine` | last-resort fallback | `wine` (`multilib` repository) |
+| `webkit2gtk-4.1` | Tauri v2 rendering engine | `webkit2gtk-4.1` |
+| Rust ≥ 1.77 | backend build | `rustup` or `rust` |
+| Node ≥ 18 | frontend build | `nodejs` `npm` |
 
 ```bash
-./install_deps.sh          # installe tout
-./install_deps.sh --check  # vérifie sans rien toucher
+./install_deps.sh          # install everything
+./install_deps.sh --check  # check without touching anything
 ```
 
-## Installer
+## Install
 
 ### Arch Linux / CachyOS
 
-Les recettes `PKGBUILD` vivent dans [packaging/](packaging/) — l'une compile
-depuis les sources, l'autre réempaquette le binaire officiel :
+The `PKGBUILD` recipes live in [packaging/](packaging/) — one builds from source, the other repackages the official binary:
 
 ```bash
 git clone https://github.com/BlaMacfly/ArchMod
-cd ArchMod/packaging/aur-bin && makepkg -si   # binaire, quelques secondes
-cd ../aur && makepkg -si                      # sources, ~10 minutes
+cd ArchMod/packaging/aur-bin && makepkg -si   # binary, a few seconds
+cd ../aur && makepkg -si                      # from source, ~10 minutes
 ```
 
-Publication sur l'AUR (mainteneur) : [`packaging/publish-aur.sh`](packaging/publish-aur.sh)
-synchronise `PKGBUILD` et `.SRCINFO` vers les dépôts `archmod` et `archmod-bin`.
+Publishing to the AUR (maintainers): [`packaging/publish-aur.sh`](packaging/publish-aur.sh) syncs `PKGBUILD` and `.SRCINFO` to the `archmod` and `archmod-bin` repositories.
 
-### Autres distributions
+### Other distributions
 
-AppImage, `.deb` et `.rpm` sur la [page des releases](https://github.com/BlaMacfly/ArchMod/releases) :
+AppImage, `.deb` and `.rpm` on the [releases page](https://github.com/BlaMacfly/ArchMod/releases):
 
 ```bash
 chmod +x ArchMod_*.AppImage && ./ArchMod_*.AppImage
 ```
 
-## Démarrer
+## Development
 
 ```bash
 npm run tauri dev
 ```
 
-Binaire optimisé (et paquets `.deb` / `.rpm` / AppImage) :
+Optimised binary (plus `.deb` / `.rpm` / AppImage packages):
 
 ```bash
 npm run tauri build
 ```
 
-> ⚠️ **Toujours passer par `tauri build`, jamais par `cargo build --release` seul.**
-> Sans les variables d'environnement posées par le CLI Tauri, le binaire produit
-> reste en mode développement : il cherche le serveur Vite sur
-> `http://localhost:1420` et n'affiche qu'une fenêtre noire. Pour le binaire seul,
-> sans paquets : `npm run tauri build -- --no-bundle`.
+> ⚠️ **Always go through `tauri build`, never plain `cargo build --release`.**
+> Without the environment variables set by the Tauri CLI, the resulting binary
+> stays in development mode: it looks for the Vite server on
+> `http://localhost:1420` and shows nothing but a black window. For the binary
+> alone, without packages: `npm run tauri build -- --no-bundle`.
 
-Les paquets sont aussi construits automatiquement à chaque tag `vX.Y.Z` et
-déposés sur la [page des releases](https://github.com/BlaMacfly/ArchMod/releases) :
+Packages are also built automatically on every `vX.Y.Z` tag and attached to the releases page:
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-## Comment l'injection fonctionne
+## How injection works
 
-ArchMod choisit un backend, dans cet ordre en mode **Automatique** :
+In **Automatic** mode ArchMod picks a backend in this order:
 
-1. **protontricks** — la commande de référence, identique à ce qu'on taperait à la main :
+1. **protontricks** — the reference command, exactly what you would type by hand:
    ```bash
-   protontricks -c "wine '/chemin/vers/trainer.exe'" 292030
+   protontricks -c "wine '/path/to/trainer.exe'" 292030
    ```
-2. **Proton natif** — le script `proton run` de la version exacte qui a créé le préfixe (lue dans `compatdata/<AppID>/config_info`, puis dans `CompatToolMapping` de `config.vdf`). Aucune dépendance supplémentaire.
-3. **Wine système** — `WINEPREFIX=<compatdata>/<AppID>/pfx wine trainer.exe`. Dernier recours : la version de Wine diffère de celle de Proton et peut faire évoluer le préfixe ; ArchMod le signale dans la console.
+2. **Native Proton** — the `proton run` script of the exact version that created the prefix (read from `compatdata/<AppID>/config_info`, then from `CompatToolMapping` in `config.vdf`). No extra dependency.
+3. **System Wine** — `WINEPREFIX=<compatdata>/<AppID>/pfx wine trainer.exe`. Last resort: the Wine version differs from Proton's and may upgrade the prefix, which ArchMod reports in the console.
 
-Le processus est lancé dans son **propre groupe de processus** : le bouton « Arrêter le trainer » envoie un `SIGTERM` au groupe entier (wine et ses enfants) sans jamais toucher au jeu.
+The process runs in its **own process group**: the "Stop trainer" button sends `SIGTERM` to the whole group — wine and its children — without ever touching the game.
+
+## Getting a trainer to run under Proton
+
+A trainer is not an ordinary application: most are written in .NET and must attach to another program's process. Three obstacles come up again and again, and ArchMod now diagnoses them itself.
+
+| Obstacle | Why | Fix |
+|---|---|---|
+| **Wine-Mono instead of .NET** | Proton substitutes Wine-Mono for .NET; recent trainers will not start on it | `protontricks -q <AppID> dotnet48` (or `dotnet40` for older ones) |
+| **Stock Proton** | GE-Proton is more permissive with memory modifications | Pick GE-Proton in the game's properties |
+| **ESYNC / FSYNC** | Fast synchronisation interferes with attaching to the process | `PROTON_NO_ESYNC=1 PROTON_NO_FSYNC=1 %command%` — ArchMod already sets this for the trainer |
+| **Prefix set to Windows XP/Vista** | A game fix may have lowered the reported version; modern .NET refuses it | `protontricks <AppID> win10` |
+
+⚠️ **WeMod's trainers are not distributed separately**: they are encrypted files that only run inside its Windows client, which requires an account. Use a standalone source — FLiNG, MrAntiFun, Cheat Happens' free trainers — or a Cheat Engine table.
+
+## Native option engine
+
+Beyond launching trainers, ArchMod can read and write a Proton game's memory directly, without Wine or Cheat Engine — a game started by Steam remains an ordinary Linux process, and `process_vm_readv` is enough.
+
+Worth knowing: pressure-vessel places games in a **child user namespace** owned by your account. You therefore hold `CAP_SYS_PTRACE` inside it, and the `kernel.yama.ptrace_scope` restriction does not apply — no system setting to change.
+
+| Building block | State |
+|---|---|
+| Memory read/write, PE module resolution | done |
+| `aobscanmodule` pattern search | done — 102 MB scanned in ~110 ms |
+| Cheat Engine `.CT` table parser | done, wired into the Workshop |
+| Address resolution, pointer chains, value freezing | done |
+| Auto-assembler (`[ENABLE]` scripts, code injection) | to do |
+
+Without the auto-assembler, only entries whose address rests on a module — or on a symbol produced by a pattern scan — can be used. Modern tables lean heavily on scripts: ArchMod identifies those and says so, rather than failing silently.
 
 ## Architecture
 
 ```
 src-tauri/src/
-├── error.rs           erreurs typées, sérialisées vers le frontend { kind, message, hint }
-├── vdf.rs             parseur KeyValues de Valve (.vdf / .acf), insensible à la casse
-├── steam_scanner.rs   racines Steam, bibliothèques, manifestes, filtrage des runtimes
-├── banners.rs         cache local → librarycache Steam → CDN, matérialisés dans ~/.cache/ArchMod
-├── vault.rs           config.json : association AppID → trainer, écriture atomique
-├── proton.rs          résolution de la distribution Proton d'un jeu
-├── injector.rs        plans de lancement, exécution asynchrone, streaming des logs, arrêt
-├── prefix.rs          diagnostic du préfixe : .NET, Wine-Mono, version de Windows
-├── memory.rs          lecture/écriture mémoire du jeu, recherche de motifs (AOB)
-├── hook.rs            analyse et pose de détours dans le code d'un jeu
-├── cheat_table.rs     parseur des tables Cheat Engine (.CT)
-├── profile.rs         format des profils communautaires, validation, stockage
-├── engine.rs          résolution des options, lecture/écriture de valeurs, gel
-└── lib.rs             état partagé et commandes Tauri
+├── error.rs           typed errors, serialised to the frontend as { kind, message, hint }
+├── vdf.rs             Valve KeyValues parser (.vdf / .acf), case-insensitive
+├── steam_scanner.rs   Steam roots, libraries, manifests, runtime filtering
+├── banners.rs         local cache → Steam librarycache → CDN, materialised in ~/.cache/ArchMod
+├── vault.rs           config.json: AppID → trainer binding, atomic writes
+├── proton.rs          resolves a game's Proton distribution
+├── injector.rs        launch plans, async execution, log streaming, shutdown
+├── prefix.rs          prefix diagnosis: .NET, Wine-Mono, Windows version
+├── memory.rs          game memory read/write, byte-pattern search (AOB)
+├── hook.rs            analysing and placing code detours
+├── cheat_table.rs     Cheat Engine (.CT) table parser
+├── profile.rs         community profile format, validation, storage
+├── trainer.rs         profile execution: resolution, values, freezing
+├── engine.rs          option resolution, typed reads and writes
+└── lib.rs             shared state and Tauri commands
 
 src/
-├── lib/               types miroir, client d'API typé, formatage
-├── hooks/             bibliothèque, journaux, visuels
-└── components/        Sidebar, MainView, ConsolePanel, dialogues
+├── i18n/              ten languages, English as the source
+├── lib/               mirror types, typed API client, formatting
+├── hooks/             library, logs, artwork, trainer profiles
+└── components/        Sidebar, MainView, TrainerPanel, Workshop, ConsolePanel
 ```
 
-Aucun `.unwrap()` sur des données externes : toutes les erreurs remontent en `Result<T, TuxError>` et l'interface affiche le message **et** l'action corrective (installer un paquet, réparer la configuration, lancer le jeu d'abord…).
-
-## Moteur d'options natif (en cours)
-
-Au-delà du lancement de trainers, ArchMod sait lire et écrire directement la
-mémoire d'un jeu Proton, sans Wine ni Cheat Engine — un jeu lancé par Steam
-reste un processus Linux ordinaire, et `process_vm_readv` suffit.
-
-Fait notable : pressure-vessel place les jeux dans un **espace de noms
-utilisateur enfant** dont ton compte est propriétaire. Tu y détiens donc
-`CAP_SYS_PTRACE`, et la restriction `kernel.yama.ptrace_scope` ne s'applique
-pas — aucun réglage système à modifier.
-
-| Brique | État |
-|---|---|
-| Lecture/écriture mémoire, résolution des modules PE | fait |
-| Recherche de motifs `aobscanmodule` | fait — 102 Mo balayés en ~110 ms |
-| Parseur de tables `.CT` | fait |
-| Résolution des adresses, chaînes de pointeurs, gel des valeurs | fait |
-| Auto-assembleur (scripts `[ENABLE]`, injection de code) | à faire |
-
-Sans auto-assembleur, seules les entrées dont l'adresse repose sur un module ou
-sur un symbole issu d'un scan sont exploitables. Les tables modernes s'appuient
-largement sur des scripts : ArchMod les identifie et le dit, plutôt que
-d'échouer en silence.
+No `.unwrap()` on external data: every error travels as `Result<T, TuxError>` and the interface shows both the message **and** the corrective action — install a package, repair the configuration, start the game first.
 
 ## Configuration
 
-`~/.config/ArchMod/config.json` :
+`~/.config/ArchMod/config.json`:
 
 ```json
 {
@@ -187,7 +185,7 @@ d'échouer en silence.
   },
   "trainers": {
     "292030": {
-      "path": "/home/moi/Trainers/Witcher3.exe",
+      "path": "/home/me/Trainers/Witcher3.exe",
       "label": "Witcher3",
       "addedAt": 1756400000,
       "lastLaunchedAt": null,
@@ -197,50 +195,35 @@ d'échouer en silence.
 }
 ```
 
-Un fichier corrompu n'est **jamais** écrasé en silence : l'interface propose une réparation qui met l'ancien fichier de côté sous `config.corrupted-<date>.json`.
+A corrupted file is **never** overwritten silently: the interface offers a repair that sets the old file aside as `config.corrupted-<date>.json`.
 
-## Faire fonctionner un trainer sous Proton
+## Contributing
 
-Un trainer n'est pas une application ordinaire : la plupart sont écrits en .NET
-et doivent s'attacher au processus d'un autre programme. Trois obstacles
-reviennent systématiquement, et ArchMod les diagnostique désormais lui-même.
+- **Profiles** — see [`profiles/README.md`](profiles/README.md). Find an address, write the profile, open a pull request. CI validates the format, identifier uniqueness, byte patterns and file placement.
+- **Translations** — one JSON file per language in [`src/i18n/locales/`](src/i18n/locales/). English is the source; missing keys fall back to it. `npm run check:locales` verifies that every language covers the same keys with the same placeholders, and CI enforces it. Ten languages ship today: English, French, German, Spanish, Brazilian Portuguese, Russian, Simplified Chinese, Polish, Turkish, Italian. **Native-speaker corrections are very welcome** — several were written without a native reviewer.
 
-| Obstacle | Pourquoi | Correctif |
-|---|---|---|
-| **Wine-Mono au lieu de .NET** | Proton substitue Wine-Mono à .NET ; les trainers récents ne démarrent pas dessus | `protontricks -q <AppID> dotnet48` (ou `dotnet40` pour les plus anciens) |
-| **Proton standard** | GE-Proton est plus permissif pour les modifications mémoire | Choisir GE-Proton dans les propriétés du jeu |
-| **ESYNC / FSYNC** | Les synchronisations rapides gênent l'attachement au processus | `PROTON_NO_ESYNC=1 PROTON_NO_FSYNC=1 %command%` — ArchMod le pose déjà pour le trainer |
-| **Préfixe en Windows XP/Vista** | Un correctif de jeu a pu abaisser la version déclarée ; .NET récent la refuse | `protontricks <AppID> win10` |
+## Troubleshooting
 
-Le diagnostic complet d'un préfixe est exposé par la commande `inspect_prefix`,
-et l'installation d'un composant par `install_component`.
-
-⚠️ **Les trainers de WeMod ne sont pas distribués séparément** : ce sont des
-fichiers chiffrés qui ne s'exécutent que dans son client Windows, lequel exige un
-compte. Utilise une source autonome — FLiNG, MrAntiFun, les trainers gratuits de
-Cheat Happens — ou une table Cheat Engine.
-
-## Dépannage
-
-| Symptôme | Cause probable |
+| Symptom | Likely cause |
 |---|---|
-| « Aucun préfixe Proton » | Le jeu n'a jamais été lancé via Steam : le préfixe n'existe pas encore. |
-| « Dépendance manquante : protontricks » | `sudo pacman -S protontricks`, ou passe le backend sur *Proton natif* dans les réglages. |
-| Le trainer démarre mais ne s'accroche pas | Lance le jeu **avant** le trainer ; certains trainers exigent aussi que la partie soit chargée. |
-| Aucune jaquette | Cache Steam vide et téléchargement désactivé : réactive « Télécharger les jaquettes » dans les réglages. |
-| Bibliothèque vide | Steam installé mais aucun jeu, ou jeux sur un disque non déclaré dans `libraryfolders.vdf`. |
+| "No Proton prefix" | The game has never run through Steam, so the prefix does not exist yet. |
+| "Missing dependency: protontricks" | `sudo pacman -S protontricks`, or switch the backend to *Native Proton* in the settings. |
+| The trainer starts but does not attach | Start the game **before** the trainer; many trainers also need a save to be loaded. |
+| No artwork | Steam's cache is empty and downloads are disabled: re-enable "Download missing artwork" in the settings. |
+| Empty library | Steam is installed but has no games, or games sit on a drive missing from `libraryfolders.vdf`. |
 
 ## Tests
 
 ```bash
-cd src-tauri && cargo test     # parseur VDF, coffre, construction des commandes
-npm run build                  # typage TypeScript strict + bundle
+cd src-tauri && cargo test     # VDF parser, vault, command building, memory, profiles
+npm run check:locales          # translation coverage
+npm run build                  # strict TypeScript + bundle
 ```
 
-## Avertissement
+## Warning
 
-Les trainers modifient la mémoire d'un processus en cours. Réserve-les au **solo** : les utiliser en multijoueur ou sur un jeu protégé par un anti-triche (EAC, BattlEye, VAC) peut entraîner un bannissement. ArchMod ne fournit aucun trainer, il se contente de lancer ceux que tu possèdes déjà.
+Trainers modify the memory of a running process. Keep them to **single-player**: using them in multiplayer or on a game protected by anti-cheat (EAC, BattlEye, VAC) can get you banned. ArchMod ships no trainer; it only runs the ones you already own.
 
-## Licence
+## License
 
-MIT — voir [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).

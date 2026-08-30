@@ -3,28 +3,14 @@ import { Modal } from "./Modal";
 import { api, toTuxError } from "../lib/api";
 import { forgetBanners } from "../hooks/useBanner";
 import type { AppPaths, Backend, Dependencies, Settings } from "../lib/types";
+import { LANGUAGES, useI18n, type TranslationKey } from "../i18n";
 
-const BACKENDS: { value: Backend; label: string; description: string }[] = [
-  {
-    value: "auto",
-    label: "Automatique",
-    description: "protontricks si présent, sinon Proton natif, sinon Wine système.",
-  },
-  {
-    value: "protontricks",
-    label: "protontricks",
-    description: "protontricks -c \"wine '<trainer>'\" <AppID>",
-  },
-  {
-    value: "proton",
-    label: "Proton natif",
-    description: "Le script proton du jeu, sans dépendance supplémentaire.",
-  },
-  {
-    value: "wine",
-    label: "Wine système",
-    description: "WINEPREFIX pointé sur compatdata. Peut modifier le préfixe.",
-  },
+/** Les libellés viennent du dictionnaire ; protontricks garde son nom propre. */
+const BACKENDS: { value: Backend; label?: TranslationKey; hint: TranslationKey }[] = [
+  { value: "auto", label: "settings.backendAuto", hint: "settings.backendAutoHint" },
+  { value: "protontricks", hint: "settings.backendProtontricksHint" },
+  { value: "proton", label: "settings.backendProton", hint: "settings.backendProtonHint" },
+  { value: "wine", label: "settings.backendWine", hint: "settings.backendWineHint" },
 ];
 
 interface SettingsDialogProps {
@@ -44,6 +30,7 @@ export function SettingsDialog({
   onSaved,
   onNotice,
 }: SettingsDialogProps) {
+  const { t, language, setLanguage } = useI18n();
   const [draft, setDraft] = useState<Settings>(settings);
   const [saving, setSaving] = useState(false);
 
@@ -64,7 +51,7 @@ export function SettingsDialog({
     try {
       const removed = await api.clearBannerCache();
       forgetBanners();
-      onNotice(`${removed} fichier(s) de visuels supprimé(s).`);
+      onNotice(t("settings.cacheCleared", { count: removed }));
     } catch (error) {
       onNotice(toTuxError(error).message);
     }
@@ -72,7 +59,7 @@ export function SettingsDialog({
 
   return (
     <Modal
-      title="Réglages"
+      title={t("settings.title")}
       onClose={onClose}
       footer={
         <>
@@ -81,7 +68,7 @@ export function SettingsDialog({
             onClick={onClose}
             className="rounded-lg border border-ink-600 px-4 py-2 text-sm text-mist-300 transition-colors hover:bg-white/5"
           >
-            Annuler
+            {t("dialog.cancel")}
           </button>
           <button
             type="button"
@@ -89,15 +76,35 @@ export function SettingsDialog({
             disabled={saving}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 hover:text-ink-950 disabled:opacity-60"
           >
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("settings.saving") : t("settings.save")}
           </button>
         </>
       }
     >
       <div className="space-y-5 text-sm">
+        <label className="block">
+          <span className="mb-1.5 block font-medium text-mist-100">
+            {t("settings.language")}
+          </span>
+          <select
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            className="w-full rounded-lg border border-ink-600 bg-ink-800 px-3 py-2 text-sm text-mist-100 outline-none focus:border-brand-500/70"
+          >
+            {LANGUAGES.map((entry) => (
+              <option key={entry.code} value={entry.code}>
+                {entry.label}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-mist-500">
+            {t("settings.languageHint")}
+          </span>
+        </label>
+
         <fieldset>
           <legend className="mb-2 font-medium text-mist-100">
-            Méthode d'injection
+            {t("settings.backend")}
           </legend>
           <div className="space-y-2">
             {BACKENDS.map((backend) => (
@@ -119,10 +126,10 @@ export function SettingsDialog({
                 />
                 <span>
                   <span className="block font-medium text-mist-100">
-                    {backend.label}
+                    {backend.label ? t(backend.label) : "protontricks"}
                   </span>
                   <span className="block font-mono text-xs text-mist-500">
-                    {backend.description}
+                    {t(backend.hint)}
                   </span>
                 </span>
               </label>
@@ -133,33 +140,34 @@ export function SettingsDialog({
         <Toggle
           checked={draft.warnIfGameNotRunning}
           onChange={(value) => setDraft({ ...draft, warnIfGameNotRunning: value })}
-          label="Avertir si le jeu n'est pas lancé"
-          description="Demande confirmation avant d'injecter un trainer dans un jeu fermé."
+          label={t("settings.warnLabel")}
+          description={t("settings.warnHint")}
         />
         <Toggle
           checked={draft.allowNetworkArtwork}
           onChange={(value) => setDraft({ ...draft, allowNetworkArtwork: value })}
-          label="Télécharger les jaquettes manquantes"
-          description="Utilise le CDN Steam quand le cache local ne contient pas le visuel."
+          label={t("settings.artworkLabel")}
+          description={t("settings.artworkHint")}
         />
 
         <div className="space-y-2 border-t border-ink-700 pt-4 text-xs text-mist-500">
           <p>
             <span className="text-mist-400">protontricks :</span>{" "}
             {dependencies?.protontricks ??
-              (dependencies?.protontricksFlatpak ? "Flatpak" : "non installé")}
+              (dependencies?.protontricksFlatpak ? "Flatpak" : t("settings.notInstalled"))}
           </p>
           <p>
             <span className="text-mist-400">wine :</span>{" "}
-            {dependencies?.wine ?? "non installé"}
+            {dependencies?.wine ?? t("settings.notInstalled")}
           </p>
           {paths && (
             <>
               <p className="break-all">
-                <span className="text-mist-400">Configuration :</span> {paths.config}
+                <span className="text-mist-400">{t("settings.configPath")}</span>{" "}
+                {paths.config}
               </p>
               <p className="break-all">
-                <span className="text-mist-400">Cache visuels :</span>{" "}
+                <span className="text-mist-400">{t("settings.cachePath")}</span>{" "}
                 {paths.bannerCache}
               </p>
             </>
@@ -169,7 +177,7 @@ export function SettingsDialog({
             onClick={clearCache}
             className="mt-1 rounded-md border border-ink-600 px-3 py-1.5 text-mist-300 transition-colors hover:bg-white/5"
           >
-            Vider le cache des visuels
+            {t("settings.clearCache")}
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { Modal } from "./Modal";
+import { useI18n } from "../i18n";
 
 interface ConfirmDialogProps {
   title: string;
@@ -16,6 +17,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
   return (
     <Modal
       title={title}
@@ -27,7 +29,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="rounded-lg border border-ink-600 px-4 py-2 text-sm text-mist-300 transition-colors hover:bg-white/5"
           >
-            Annuler
+            {t("dialog.cancel")}
           </button>
           <button
             type="button"

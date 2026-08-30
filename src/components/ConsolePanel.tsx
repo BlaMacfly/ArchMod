@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Eraser, Terminal } from "lucide-react";
 import { formatClock } from "../lib/format";
+import { useI18n } from "../i18n";
 import type { ConsoleLine } from "../hooks/useLogs";
 import type { LogLevel } from "../lib/types";
 
@@ -29,6 +30,7 @@ export function ConsolePanel({
   onToggle,
   onClear,
 }: ConsolePanelProps) {
+  const { t } = useI18n();
   const bottom = useRef<HTMLDivElement>(null);
 
   // Défilement automatique tant que la console est dépliée.
@@ -56,22 +58,22 @@ export function ConsolePanel({
             <ChevronDown className="h-4 w-4" />
           )}
           <Terminal className="h-4 w-4" />
-          Console
+          {t("console.title")}
         </button>
 
         {collapsed && unread > 0 && (
           <span className="rounded-full bg-brand-500/20 px-2 py-0.5 text-[11px] font-semibold text-brand-400">
-            {unread} nouvelle{unread > 1 ? "s" : ""} ligne{unread > 1 ? "s" : ""}
+            {t("console.unread", { count: unread })}
           </span>
         )}
 
         <span className="ml-auto text-[11px] text-mist-500">
-          {lines.length} ligne{lines.length > 1 ? "s" : ""}
+          {t("console.lines", { count: lines.length })}
         </span>
         <button
           type="button"
           onClick={onClear}
-          title="Vider la console"
+          title={t("console.clear")}
           className="rounded-md p-1 text-mist-500 transition-colors hover:bg-white/5 hover:text-mist-100"
         >
           <Eraser className="h-3.5 w-3.5" />
@@ -82,7 +84,7 @@ export function ConsolePanel({
         <div className="scroll-slim flex-1 overflow-y-auto px-4 pb-3 font-mono text-[12px] leading-relaxed">
           {lines.length === 0 ? (
             <p className="py-6 text-center text-mist-500">
-              La sortie de protontricks, Proton et Wine s'affichera ici en direct.
+              {t("console.empty")}
             </p>
           ) : (
             lines.map((line) => {

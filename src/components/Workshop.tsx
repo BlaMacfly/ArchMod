@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { api, formatAddress, toTuxError, valueNumber } from "../lib/api";
+import { useI18n } from "../i18n";
 import type {
   Anchor,
   GameView,
@@ -18,12 +19,14 @@ import type {
   ValueTypeKind,
 } from "../lib/types";
 
+/** Les types de valeur portent des noms techniques, identiques dans toutes les
+ *  langues : « 4 Bytes », « Float »… ce sont ceux de Cheat Engine. */
 const VALUE_TYPES: { kind: ValueTypeKind; label: string }[] = [
-  { kind: "fourBytes", label: "4 octets (entier)" },
-  { kind: "float", label: "Flottant" },
-  { kind: "byte", label: "1 octet" },
-  { kind: "twoBytes", label: "2 octets" },
-  { kind: "eightBytes", label: "8 octets" },
+  { kind: "fourBytes", label: "4 Bytes" },
+  { kind: "float", label: "Float" },
+  { kind: "byte", label: "Byte" },
+  { kind: "twoBytes", label: "2 Bytes" },
+  { kind: "eightBytes", label: "8 Bytes" },
   { kind: "double", label: "Double" },
 ];
 
@@ -150,6 +153,7 @@ export function Workshop({
   onSaved,
   onNotice,
 }: WorkshopProps) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [probe, setProbe] = useState<OptionStatus | null>(null);
   const [probeError, setProbeError] = useState<string | null>(null);
@@ -180,18 +184,18 @@ export function Workshop({
 
   const add = () => {
     if (!draft.name.trim()) {
-      onNotice("Donne un nom à l'option.");
+      onNotice(t("workshop.needsName"));
       return;
     }
     const option = draftToOption(draft);
     if (profile.options.some((existing) => existing.id === option.id)) {
-      onNotice(`Une option porte déjà l'identifiant « ${option.id} ».`);
+      onNotice(t("workshop.duplicateId", { id: option.id }));
       return;
     }
     onProfileChange({ ...profile, options: [...profile.options, option] });
     setDraft({ ...EMPTY, category: draft.category, module: draft.module });
     setProbe(null);
-    onNotice(`Option « ${option.name} » ajoutée au profil.`);
+    onNotice(t("workshop.added", { name: option.name }));
   };
 
   /**
@@ -205,7 +209,7 @@ export function Workshop({
       const chosen = await openFileDialog({
         multiple: false,
         directory: false,
-        title: "Choisir une table Cheat Engine",
+        title: t("workshop.importTable"),
         filters: [{ name: "Table Cheat Engine", extensions: ["CT", "ct", "xml"] }],
       });
       if (typeof chosen !== "string") return;
@@ -219,7 +223,10 @@ export function Workshop({
       onProfileChange({ ...profile, options: [...profile.options, ...added] });
       setSkipped(imported.skipped);
       onNotice(
-        `${added.length} option(s) reprise(s), ${imported.skipped.length} écartée(s).`,
+        t("workshop.tableImported", {
+          added: added.length,
+          skipped: imported.skipped.length,
+        }),
       );
     } catch (error) {
       onNotice(toTuxError(error).message);
@@ -237,7 +244,7 @@ export function Workshop({
       const path = await api.saveProfile(profile);
       // Le panneau doit voir immédiatement le profil qu'on vient d'écrire.
       onSaved();
-      onNotice(`Profil enregistré : ${path}`);
+      onNotice(t("workshop.saved", { path }));
     } catch (error) {
       onNotice(toTuxError(error).message);
     }
@@ -248,23 +255,23 @@ export function Workshop({
       {/* Éditeur */}
       <div className="space-y-4 rounded-card border border-ink-700 bg-ink-850 p-5">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Nom de l'option">
+          <Field label={t("workshop.name")}>
             <input
               value={draft.name}
               onChange={(event) => patch({ name: event.target.value })}
-              placeholder="Endurance infinie"
+              placeholder={t("workshop.namePlaceholder")}
               className={INPUT}
             />
           </Field>
-          <Field label="Catégorie">
+          <Field label={t("workshop.category")}>
             <input
               value={draft.category}
               onChange={(event) => patch({ category: event.target.value })}
-              placeholder="Joueur"
+              placeholder={t("workshop.categoryPlaceholder")}
               className={INPUT}
             />
           </Field>
-          <Field label="Type de valeur">
+          <Field label={t("workshop.valueType")}>
             <select
               value={draft.valueType}
               onChange={(event) =>
@@ -279,7 +286,7 @@ export function Workshop({
               ))}
             </select>
           </Field>
-          <Field label="Contrôle">
+          <Field label={t("workshop.control")}>
             <select
               value={draft.control}
               onChange={(event) =>
@@ -287,14 +294,16 @@ export function Workshop({
               }
               className={INPUT}
             >
-              <option value="toggle">Interrupteur (gèle la valeur)</option>
-              <option value="number">Valeur saisie</option>
-              <option value="action">Bouton à effet unique</option>
+              <option value="toggle">{t("workshop.controlToggle")}</option>
+              <option value="number">{t("workshop.controlNumber")}</option>
+              <option value="action">{t("workshop.controlAction")}</option>
             </select>
           </Field>
           <Field
             label={
-              draft.control === "number" ? "Valeur par défaut" : "Valeur imposée"
+              draft.control === "number"
+                ? t("workshop.defaultValue")
+                : t("workshop.forcedValue")
             }
           >
             <input
@@ -303,7 +312,7 @@ export function Workshop({
               className={INPUT}
             />
           </Field>
-          <Field label="Raccourci (facultatif)">
+          <Field label={t("workshop.hotkey")}>
             <input
               value={draft.hotkey}
               onChange={(event) => patch({ hotkey: event.target.value })}
@@ -328,14 +337,14 @@ export function Workshop({
                 ].join(" ")}
               >
                 {kind === "aob"
-                  ? "Motif d'octets (recommandé)"
-                  : "Décalage depuis un module"}
+                  ? t("workshop.anchorAob")
+                  : t("workshop.anchorModule")}
               </button>
             ))}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Module">
+            <Field label={t("workshop.module")}>
               <input
                 value={draft.module}
                 onChange={(event) => patch({ module: event.target.value })}
@@ -346,7 +355,7 @@ export function Workshop({
 
             {draft.anchorKind === "aob" ? (
               <>
-                <Field label="Décalage dans le motif">
+                <Field label={t("workshop.patternOffset")}>
                   <input
                     value={draft.patternOffset}
                     onChange={(event) =>
@@ -355,7 +364,7 @@ export function Workshop({
                     className={INPUT}
                   />
                 </Field>
-                <Field label="Motif d'octets" wide>
+                <Field label={t("workshop.pattern")} wide>
                   <input
                     value={draft.pattern}
                     onChange={(event) => patch({ pattern: event.target.value })}
@@ -363,7 +372,7 @@ export function Workshop({
                     className={`${INPUT} font-mono`}
                   />
                 </Field>
-                <Field label="Correspondance n°">
+                <Field label={t("workshop.occurrence")}>
                   <input
                     value={draft.occurrence}
                     onChange={(event) =>
@@ -374,7 +383,7 @@ export function Workshop({
                 </Field>
               </>
             ) : (
-              <Field label="Décalage (hex accepté)">
+              <Field label={t("workshop.moduleOffset")}>
                 <input
                   value={draft.moduleOffset}
                   onChange={(event) =>
@@ -386,11 +395,11 @@ export function Workshop({
               </Field>
             )}
 
-            <Field label="Chaîne de pointeurs" wide>
+            <Field label={t("workshop.pointers")} wide>
               <input
                 value={draft.offsets}
                 onChange={(event) => patch({ offsets: event.target.value })}
-                placeholder="0x18 0xC0 — appliqués dans l'ordre"
+                placeholder={t("workshop.pointersPlaceholder")}
                 className={`${INPUT} font-mono`}
               />
             </Field>
@@ -403,7 +412,7 @@ export function Workshop({
               onChange={(event) => patch({ dereference: event.target.checked })}
               className="accent-[var(--color-brand-500)]"
             />
-            Déréférencer l'ancrage (équivalent des crochets de Cheat Engine)
+            {t("workshop.dereference")}
           </label>
         </div>
 
@@ -415,7 +424,7 @@ export function Workshop({
             className="inline-flex items-center gap-2 rounded-lg border border-brand-500/50 bg-brand-500/10 px-4 py-2 text-sm font-medium text-brand-400 transition-colors hover:bg-brand-500/20 disabled:opacity-50"
           >
             <FlaskConical className="h-4 w-4" />
-            {testing ? "Essai…" : "Tester sur le jeu"}
+            {testing ? t("workshop.testing") : t("workshop.test")}
           </button>
           <button
             type="button"
@@ -423,7 +432,7 @@ export function Workshop({
             className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 hover:text-ink-950"
           >
             <Plus className="h-4 w-4" />
-            Ajouter au profil
+            {t("workshop.add")}
           </button>
 
           <button
@@ -432,12 +441,12 @@ export function Workshop({
             className="inline-flex items-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-4 py-2 text-sm font-medium text-mist-100 transition-colors hover:border-brand-500/50 hover:bg-ink-700"
           >
             <FileInput className="h-4 w-4" />
-            Importer une table Cheat Engine
+            {t("workshop.importTable")}
           </button>
 
           {!game.running && (
             <span className="text-xs text-warn-500">
-              Lance le jeu pour pouvoir éprouver une adresse.
+              {t("workshop.needsRunning")}
             </span>
           )}
         </div>
@@ -445,12 +454,14 @@ export function Workshop({
         {skipped.length > 0 && (
           <details className="rounded-lg border border-ink-600 bg-ink-800 px-4 py-3 text-xs">
             <summary className="cursor-pointer text-mist-300">
-              {skipped.length} entrée(s) de la table non reprises
+              {t("workshop.skippedTitle", { count: skipped.length })}
             </summary>
             <ul className="mt-2 space-y-1 text-mist-500">
               {skipped.map((entry, index) => (
                 <li key={index}>
-                  <span className="text-mist-300">{entry.description || "(sans nom)"}</span>{" "}
+                  <span className="text-mist-300">
+                    {entry.description || t("workshop.unnamed")}
+                  </span>{" "}
                   — {entry.reason}
                 </li>
               ))}
@@ -468,12 +479,10 @@ export function Workshop({
             ].join(" ")}
           >
             {probeError ?? (
-              <>
-                Adresse résolue :{" "}
-                <span className="font-mono">{formatAddress(probe?.address ?? null)}</span>
-                {" — valeur actuelle : "}
-                <span className="font-mono">{valueNumber(probe?.value ?? null)}</span>
-              </>
+              t("workshop.resolved", {
+                address: formatAddress(probe?.address ?? null),
+                value: String(valueNumber(probe?.value ?? null)),
+              })
             )}
           </div>
         )}
@@ -483,7 +492,7 @@ export function Workshop({
       <aside className="space-y-3 rounded-card border border-ink-700 bg-ink-850 p-4">
         <header className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-mist-100">
-            Profil ({profile.options.length})
+            {t("workshop.profileTitle", { count: profile.options.length })}
           </h3>
           <button
             type="button"
@@ -492,18 +501,19 @@ export function Workshop({
             className="inline-flex items-center gap-1.5 rounded-md border border-ink-600 px-2.5 py-1 text-xs text-mist-300 transition-colors hover:bg-white/5 disabled:opacity-50"
           >
             <Save className="h-3.5 w-3.5" />
-            Enregistrer
+            {t("workshop.saveProfile")}
           </button>
         </header>
 
         <p className="text-[11px] text-mist-500">
-          Build {profile.buildId ?? "inconnu"} — un profil ne vaut que pour la
-          version du jeu sur laquelle il a été relevé.
+          {t("workshop.buildNote", {
+            build: profile.buildId ?? t("prefix.unknown"),
+          })}
         </p>
 
         {profile.options.length === 0 ? (
           <p className="py-6 text-center text-xs text-mist-500">
-            Aucune option. Éprouve une adresse, puis ajoute-la.
+            {t("workshop.emptyProfile")}
           </p>
         ) : (
           <ul className="space-y-1">
@@ -523,7 +533,7 @@ export function Workshop({
                 <button
                   type="button"
                   onClick={() => remove(option.id)}
-                  title="Retirer"
+                  title={t("workshop.remove")}
                   className="shrink-0 rounded p-1 text-mist-500 transition-colors hover:text-halt-500"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

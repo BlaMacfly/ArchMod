@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Filter, Gamepad2, RefreshCw, Search, Zap } from "lucide-react";
 import { GameThumb } from "./GameThumb";
 import type { GameView } from "../lib/types";
+import { useI18n } from "../i18n";
 
 interface SidebarProps {
   games: GameView[];
@@ -20,6 +21,7 @@ export function Sidebar({
   onSelect,
   onRescan,
 }: SidebarProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [filtre, setFiltre] = useState<Filtre>("tous");
 
@@ -46,8 +48,8 @@ export function Sidebar({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Rechercher un jeu…"
-            aria-label="Rechercher un jeu"
+            placeholder={t("sidebar.search")}
+            aria-label={t("sidebar.search")}
             className="w-full rounded-lg border border-ink-600/80 bg-ink-800 py-2 pl-9 pr-3 text-sm text-mist-100 placeholder:text-mist-500 outline-none transition-colors focus:border-brand-500/70 focus:ring-2 focus:ring-brand-500/20"
           />
         </div>
@@ -55,9 +57,9 @@ export function Sidebar({
         <div className="flex items-center gap-1 rounded-lg bg-ink-800 p-1">
           {(
             [
-              ["tous", "Tous"],
-              ["trainers", "Trainers"],
-              ["actifs", "Actifs"],
+              ["tous", t("sidebar.filterAll")],
+              ["trainers", t("sidebar.filterTrainers")],
+              ["actifs", t("sidebar.filterActive")],
             ] as [Filtre, string][]
           ).map(([value, label]) => (
             <button
@@ -79,15 +81,17 @@ export function Sidebar({
         <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-mist-500">
           <span className="inline-flex items-center gap-1.5">
             <Filter className="h-3 w-3" />
-            {filtered.length} / {games.length} jeux
+            {t("sidebar.count", { shown: filtered.length, total: games.length })}
             {runningCount > 0 && (
-              <span className="text-live-500">· {runningCount} actif(s)</span>
+              <span className="text-live-500">
+                {t("sidebar.activeCount", { count: runningCount })}
+              </span>
             )}
           </span>
           <button
             type="button"
             onClick={onRescan}
-            title="Rescanner la bibliothèque Steam"
+            title={t("sidebar.rescan")}
             className="rounded-md p-1 text-mist-400 transition-colors hover:bg-white/5 hover:text-mist-100"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -98,7 +102,7 @@ export function Sidebar({
       <div className="scroll-slim flex-1 overflow-y-auto px-2 pb-3">
         {filtered.length === 0 ? (
           <p className="px-3 py-8 text-center text-sm text-mist-500">
-            {loading ? "Scan de la bibliothèque…" : "Aucun jeu ne correspond."}
+            {loading ? t("sidebar.scanning") : t("sidebar.noMatch")}
           </p>
         ) : (
           <ul className="space-y-1">
@@ -135,7 +139,9 @@ export function Sidebar({
                             game.running ? "bg-live-500" : "bg-ink-500",
                           ].join(" ")}
                         />
-                        {game.running ? "en cours" : `AppID ${game.appId}`}
+                        {game.running
+                          ? t("sidebar.running")
+                          : t("sidebar.appId", { id: game.appId })}
                       </span>
                     </span>
                     {game.trainer && (
@@ -149,7 +155,9 @@ export function Sidebar({
                               : "text-brand-400",
                         ].join(" ")}
                         aria-label={
-                          game.trainerMissing ? "Trainer introuvable" : "Trainer lié"
+                          game.trainerMissing
+                            ? t("sidebar.trainerMissing")
+                            : t("sidebar.trainerLinked")
                         }
                       />
                     )}
@@ -163,7 +171,7 @@ export function Sidebar({
 
       <footer className="flex items-center gap-2 border-t border-ink-700/70 px-4 py-2.5 text-[11px] text-mist-500">
         <Gamepad2 className="h-3.5 w-3.5" />
-        Bibliothèque Steam locale
+        {t("sidebar.footer")}
       </footer>
     </aside>
   );
