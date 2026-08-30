@@ -1,6 +1,6 @@
 pkgbase = archmod
 	pkgdesc = Gestionnaire graphique de trainers pour jeux Steam sous Proton
-	pkgver = 0.3.0
+	pkgver = 0.4.0
 	pkgrel = 1
 	url = https://github.com/BlaMacfly/ArchMod
 	arch = x86_64
@@ -19,9 +19,9 @@ pkgbase = archmod
 	optdepends = wine: repli lorsque protontricks est absent
 	optdepends = steam: bibliothèque de jeux à scanner
 	options = !lto
-	source = archmod-0.3.0.tar.gz::https://github.com/BlaMacfly/ArchMod/archive/refs/tags/v0.3.0.tar.gz
+	source = archmod-0.4.0.tar.gz::https://github.com/BlaMacfly/ArchMod/archive/refs/tags/v0.4.0.tar.gz
 	source = archmod.desktop
-	sha256sums = 8b378c8bf045c888324236c9e97bbfb63b152eb14db59a80ba87d8c6ad59b312
+	sha256sums = 4ccf4809e0c5b3cca1b599accff51b945228c1cf9691536dccb846c93459ad01
 	sha256sums = 502ae15b8c32df696aac646651f749f39852f94a82e5c8180c4752a3fb5451ed
 
 pkgname = archmod
