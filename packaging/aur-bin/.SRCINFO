@@ -1,6 +1,6 @@
 pkgbase = archmod-bin
 	pkgdesc = Gestionnaire graphique de trainers pour jeux Steam sous Proton (binaire officiel)
-	pkgver = 0.1.0
+	pkgver = 0.2.0
 	pkgrel = 1
 	url = https://github.com/BlaMacfly/ArchMod
 	arch = x86_64
@@ -15,7 +15,7 @@ pkgbase = archmod-bin
 	optdepends = steam: bibliothèque de jeux à scanner
 	provides = archmod
 	conflicts = archmod
-	source = archmod-bin-0.1.0.deb::https://github.com/BlaMacfly/ArchMod/releases/download/v0.1.0/ArchMod_0.1.0_amd64.deb
-	sha256sums = SKIP
+	source = archmod-bin-0.2.0.deb::https://github.com/BlaMacfly/ArchMod/releases/download/v0.2.0/ArchMod_0.2.0_amd64.deb
+	sha256sums = e83691e8726105b3955329cc80d8f5ce1fd4cbc3e4100f7bf844e96f8f61a007
 
 pkgname = archmod-bin

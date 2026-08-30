@@ -4,7 +4,7 @@
 # Pour une installation sans toolchain, voir le paquet `archmod-bin`.
 
 pkgname=archmod
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Gestionnaire graphique de trainers pour jeux Steam sous Proton"
 arch=('x86_64')
@@ -21,8 +21,8 @@ options=('!lto')  # le LTO est déjà activé dans le profil release du projet
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "archmod.desktop")
 # TODO : remplacer la première somme par la vraie via `updpkgsums`.
-sha256sums=('4fbc4e865ca94bdc1ca4a75673b8e24e0ed83fa1377ec71db5f8e91b7986e1c0'
-            'aa4f08d96abdb9a810ee3e517401b94592b9b119da8b1db15ac52a52583adc23')
+sha256sums=('53aef64f501a82bd4f764e3ef689df8042516e25c46baa4c5e8ac841c4f46356'
+            '502ae15b8c32df696aac646651f749f39852f94a82e5c8180c4752a3fb5451ed')
 
 _srcdir="ArchMod-$pkgver"
 

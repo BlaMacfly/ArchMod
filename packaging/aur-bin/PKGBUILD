@@ -5,7 +5,7 @@
 
 pkgname=archmod-bin
 _pkgname=ArchMod
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Gestionnaire graphique de trainers pour jeux Steam sous Proton (binaire officiel)"
 arch=('x86_64')
@@ -21,7 +21,7 @@ provides=('archmod')
 conflicts=('archmod')
 source=("$pkgname-$pkgver.deb::$url/releases/download/v$pkgver/${_pkgname}_${pkgver}_amd64.deb")
 # TODO : remplacer par la vraie somme via `updpkgsums` une fois la release publiée.
-sha256sums=('9ed4bc60d6733f0bc7e47ce2e0b1cbca2ddc7464ec77960f6e0611a78474bf9e')
+sha256sums=('e83691e8726105b3955329cc80d8f5ce1fd4cbc3e4100f7bf844e96f8f61a007')
 
 package() {
   # Le .deb produit par Tauri contient déjà l'arborescence /usr attendue :
