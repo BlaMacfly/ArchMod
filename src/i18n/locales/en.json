@@ -237,5 +237,8 @@
   "script.warning": "Modifies the running game. Save first.",
   "script.done": "Script run: {count} symbols published, code at {address}.",
   "script.reverted": "Script reverted, original code restored.",
-  "script.nothing": "No script was active."
+  "script.nothing": "No script was active.",
+  "main.otherFormats": "A Cheat Engine .CT table is imported from the Workshop tab, an ArchMod .json profile from the Panel tab.",
+  "workshop.overwrite": "A profile already exists for this build. Overwrite it?",
+  "panel.editInWorkshop": "Open in the Workshop"
 }

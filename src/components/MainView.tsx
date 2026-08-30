@@ -5,6 +5,7 @@ import {
   FileDown,
   FolderOpen,
   HardDrive,
+  Pencil,
   Play,
   Square,
   Terminal,
@@ -23,7 +24,7 @@ import { useI18n, type TranslationKey } from "../i18n";
 import { useBanner } from "../hooks/useBanner";
 import { api, formatCommand, toTuxError } from "../lib/api";
 import { accentFromAppId, basename, formatBytes, formatRelative } from "../lib/format";
-import type { Dependencies, GameView } from "../lib/types";
+import type { Dependencies, GameView, Profile } from "../lib/types";
 
 interface MainViewProps {
   game: GameView | null;
@@ -225,7 +226,15 @@ export function MainView({
         </div>
 
         {tab === "panneau" && (
-          <PanneauSection game={game} trainer={trainer} onNotice={onNotice} />
+          <PanneauSection
+            game={game}
+            trainer={trainer}
+            onEdit={(profile) => {
+              trainer.setDraft(profile);
+              setTab("atelier");
+            }}
+            onNotice={onNotice}
+          />
         )}
 
         {tab === "scanner" && (
@@ -276,9 +285,16 @@ export function MainView({
                   </p>
                 </>
               ) : (
-                <p className="mt-1.5 text-sm text-mist-400">
-                  {t("main.noTrainerLinked")}
-                </p>
+                <>
+                  <p className="mt-1.5 text-sm text-mist-400">
+                    {t("main.noTrainerLinked")}
+                  </p>
+                  {/* Deux autres formats s'importent ailleurs : sans cette
+                      phrase, rien ne permet de le deviner. */}
+                  <p className="mt-1 max-w-lg text-xs text-mist-500">
+                    {t("main.otherFormats")}
+                  </p>
+                </>
               )}
             </div>
 
@@ -487,11 +503,18 @@ const ONGLETS: [Onglet, TranslationKey, TranslationKey][] = [
 interface PanneauSectionProps {
   game: GameView;
   trainer: ReturnType<typeof useTrainer>;
+  /** Reprend un profil existant dans l'atelier, pour le corriger. */
+  onEdit: (profile: Profile) => void;
   onNotice: (message: string) => void;
 }
 
 /** Choix du profil, puis panneau d'options une fois celui-ci chargé. */
-function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
+function PanneauSection({
+  game,
+  trainer,
+  onEdit,
+  onNotice,
+}: PanneauSectionProps) {
   const { t } = useI18n();
   const { entries, active, report, busy } = trainer;
 
@@ -554,6 +577,14 @@ function PanneauSection({ game, trainer, onNotice }: PanneauSectionProps) {
                 </p>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => onEdit(profile)}
+              title={t("panel.editInWorkshop")}
+              className="shrink-0 rounded-lg border border-ink-600 p-2 text-mist-400 transition-colors hover:border-brand-500/50 hover:text-brand-400"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
             <button
               type="button"
               disabled={busy === "profil"}

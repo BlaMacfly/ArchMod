@@ -153,28 +153,37 @@ impl Runtimes {
             name: game.name.clone(),
         })?;
 
-        let mut session = Session::new(pid);
-        let mut addresses = HashMap::new();
-        let mut options = Vec::new();
+        // Résoudre un profil déclenche autant de balayages de motifs qu'il y a
+        // d'options : plusieurs secondes sur un gros module. Le travail part sur
+        // un fil dédié pour que l'interface reste vivante.
+        let entries = profile.options.clone();
+        let (session, addresses, options) = tokio::task::spawn_blocking(move || {
+            let mut session = Session::new(pid);
+            let mut addresses = HashMap::new();
+            let mut options = Vec::new();
 
-        for option in &profile.options {
-            let mut status = OptionStatus {
-                id: option.id.clone(),
-                address: None,
-                value: None,
-                active: false,
-                error: None,
-            };
-            match session.read_recipe(&option.address, &option.value_type) {
-                Ok((address, value)) => {
-                    addresses.insert(option.id.clone(), address);
-                    status.address = Some(address);
-                    status.value = Some(value);
+            for option in &entries {
+                let mut status = OptionStatus {
+                    id: option.id.clone(),
+                    address: None,
+                    value: None,
+                    active: false,
+                    error: None,
+                };
+                match session.read_recipe(&option.address, &option.value_type) {
+                    Ok((address, value)) => {
+                        addresses.insert(option.id.clone(), address);
+                        status.address = Some(address);
+                        status.value = Some(value);
+                    }
+                    Err(error) => status.error = Some(error.to_string()),
                 }
-                Err(error) => status.error = Some(error.to_string()),
+                options.push(status);
             }
-            options.push(status);
-        }
+            (session, addresses, options)
+        })
+        .await
+        .map_err(|error| TuxError::Internal(error.to_string()))?;
 
         let resolved = options.iter().filter(|o| o.address.is_some()).count();
         let report = ActivationReport {

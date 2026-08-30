@@ -108,6 +108,9 @@ pub enum TuxError {
     #[error("Assemblage impossible de « {line} » : {detail}")]
     Assembly { line: String, detail: String },
 
+    #[error("Un profil existe déjà pour ce build : {}", .path.display())]
+    ProfileExists { path: PathBuf },
+
     #[error("Profil de trainer invalide : {detail}")]
     Profile { detail: String },
 
@@ -162,6 +165,7 @@ impl TuxError {
             TuxError::GameNotRunning { .. } => "game_not_running",
             TuxError::PatternNotFound { .. } => "pattern_not_found",
             TuxError::Assembly { .. } => "assembly",
+            TuxError::ProfileExists { .. } => "profile_exists",
             TuxError::Profile { .. } => "profile",
             TuxError::CheatTable { .. } => "cheat_table",
             TuxError::Internal(_) => "internal",

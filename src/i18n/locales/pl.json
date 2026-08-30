@@ -237,5 +237,8 @@
   "script.warning": "Modyfikuje działającą grę. Najpierw zapisz stan.",
   "script.done": "Skrypt wykonany: opublikowano {count} symboli, kod pod {address}.",
   "script.reverted": "Skrypt cofnięty, przywrócono pierwotny kod.",
-  "script.nothing": "Żaden skrypt nie był aktywny."
+  "script.nothing": "Żaden skrypt nie był aktywny.",
+  "main.otherFormats": "Tabelę .CT z Cheat Engine importuje się w zakładce Warsztat, a profil ArchMod .json w zakładce Panel.",
+  "workshop.overwrite": "Profil dla tej kompilacji już istnieje. Nadpisać?",
+  "panel.editInWorkshop": "Otwórz w warsztacie"
 }

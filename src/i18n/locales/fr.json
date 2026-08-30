@@ -237,5 +237,8 @@
   "script.warning": "Modifie le jeu en cours. Sauvegarde d'abord.",
   "script.done": "Script exécuté : {count} symboles publiés, code en {address}.",
   "script.reverted": "Script retiré, le code d'origine est restauré.",
-  "script.nothing": "Aucun script n'était actif."
+  "script.nothing": "Aucun script n'était actif.",
+  "main.otherFormats": "Une table Cheat Engine .CT s'importe depuis l'onglet Atelier, un profil ArchMod .json depuis l'onglet Panneau.",
+  "workshop.overwrite": "Un profil existe déjà pour ce build. L'écraser ?",
+  "panel.editInWorkshop": "Ouvrir dans l'atelier"
 }

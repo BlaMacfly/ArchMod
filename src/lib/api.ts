@@ -132,7 +132,8 @@ export const api = {
 
   importCheatTable: (appId: number, path: string) =>
     call<CheatTableImport>("import_cheat_table", { appId, path }),
-  saveProfile: (profile: Profile) => call<string>("save_profile", { profile }),
+  saveProfile: (profile: Profile, overwrite = false) =>
+    call<string>("save_profile", { profile, overwrite }),
   importProfile: (path: string) => call<Profile>("import_profile", { path }),
 };
 

@@ -424,8 +424,16 @@ async fn scan_start(
         name: game.name.clone(),
     })?;
 
-    let mut scanner = Scanner::new(pid, value_type);
-    let report = scanner.scan(filter)?;
+    // Un premier balayage parcourt des gigaoctets : sur le fil asynchrone, il
+    // figerait le reste de l'application le temps du scan.
+    let (scanner, report) = tokio::task::spawn_blocking(move || {
+        let mut scanner = Scanner::new(pid, value_type);
+        let report = scanner.scan(filter);
+        (scanner, report)
+    })
+    .await
+    .map_err(|error| error::TuxError::Internal(error.to_string()))?;
+    let report = report?;
 
     let mut scanners = state.scanners.lock().await;
     if let Some(mut previous) = scanners.remove(&app_id) {
@@ -444,11 +452,30 @@ async fn scan_start(
 /// Affine la recherche en cours.
 #[tauri::command]
 async fn scan_next(state: State<'_, AppState>, app_id: u32, filter: Filter) -> Result<ScanReport> {
-    let mut scanners = state.scanners.lock().await;
-    let entry = scanners
-        .get_mut(&app_id)
-        .ok_or_else(|| error::TuxError::Internal("aucune recherche en cours".into()))?;
-    entry.scanner.scan(filter)
+    // Le scanner quitte l'état partagé le temps du balayage : le verrou ne doit
+    // pas être tenu pendant plusieurs secondes, et le fil asynchrone doit rester
+    // libre de servir le reste de l'interface.
+    let ScanState { scanner, freezer } = {
+        let mut scanners = state.scanners.lock().await;
+        scanners
+            .remove(&app_id)
+            .ok_or_else(|| error::TuxError::Internal("aucune recherche en cours".into()))?
+    };
+
+    let (scanner, report) = tokio::task::spawn_blocking(move || {
+        let mut scanner = scanner;
+        let report = scanner.scan(filter);
+        (scanner, report)
+    })
+    .await
+    .map_err(|error| error::TuxError::Internal(error.to_string()))?;
+
+    state
+        .scanners
+        .lock()
+        .await
+        .insert(app_id, ScanState { scanner, freezer });
+    report
 }
 
 /// Relit les valeurs affichées, sans filtrer.
@@ -797,14 +824,15 @@ async fn import_cheat_table(
 }
 
 #[tauri::command]
-async fn save_profile(profile: Profile) -> Result<PathBuf> {
-    profile::save(&profile)
+async fn save_profile(profile: Profile, overwrite: bool) -> Result<PathBuf> {
+    profile::save(&profile, overwrite)
 }
 
 #[tauri::command]
 async fn import_profile(path: PathBuf) -> Result<Profile> {
     let imported = profile::load_from(&path)?;
-    profile::save(&imported)?;
+    // Un profil importé volontairement remplace celui du même build.
+    profile::save(&imported, true)?;
     Ok(imported)
 }
 

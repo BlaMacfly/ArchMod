@@ -436,8 +436,22 @@ pub fn load_from(path: &Path) -> Result<Profile> {
     Profile::parse(&raw)
 }
 
-pub fn save(profile: &Profile) -> Result<PathBuf> {
+/// Chemin qu'occuperait ce profil une fois enregistré.
+pub fn target_path(profile: &Profile) -> Result<PathBuf> {
+    Ok(profiles_dir()?
+        .join(profile.directory_name())
+        .join(profile.file_name()))
+}
+
+/// Enregistre le profil. Sans `overwrite`, un fichier existant est protégé :
+/// deux profils pour le même build portent le même nom, et écraser en silence
+/// le travail d'un autre serait le pire des comportements.
+pub fn save(profile: &Profile, overwrite: bool) -> Result<PathBuf> {
     profile.validate()?;
+    let existing = target_path(profile)?;
+    if !overwrite && existing.is_file() {
+        return Err(TuxError::ProfileExists { path: existing });
+    }
     let dir = profiles_dir()?.join(profile.directory_name());
     std::fs::create_dir_all(&dir).map_err(|source| TuxError::ConfigWrite {
         path: dir.clone(),

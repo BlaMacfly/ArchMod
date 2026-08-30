@@ -237,5 +237,8 @@
   "script.warning": "Verändert das laufende Spiel. Vorher speichern.",
   "script.done": "Skript ausgeführt: {count} Symbole veröffentlicht, Code bei {address}.",
   "script.reverted": "Skript zurückgenommen, ursprünglicher Code wiederhergestellt.",
-  "script.nothing": "Es war kein Skript aktiv."
+  "script.nothing": "Es war kein Skript aktiv.",
+  "main.otherFormats": "Eine Cheat-Engine-Tabelle (.CT) wird im Reiter Werkstatt importiert, ein ArchMod-Profil (.json) im Reiter Panel.",
+  "workshop.overwrite": "Für diesen Build existiert bereits ein Profil. Überschreiben?",
+  "panel.editInWorkshop": "In der Werkstatt öffnen"
 }

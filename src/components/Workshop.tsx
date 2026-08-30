@@ -6,7 +6,10 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
-import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
+import {
+  confirm as askConfirmation,
+  open as openFileDialog,
+} from "@tauri-apps/plugin-dialog";
 import { api, formatAddress, toTuxError, valueNumber } from "../lib/api";
 import { useI18n } from "../i18n";
 import type {
@@ -273,14 +276,23 @@ export function Workshop({
       options: profile.options.filter((option) => option.id !== id),
     });
 
-  const save = async () => {
+  const save = async (overwrite = false) => {
     try {
-      const path = await api.saveProfile(profile);
+      const path = await api.saveProfile(profile, overwrite);
       // Le panneau doit voir immédiatement le profil qu'on vient d'écrire.
       onSaved();
       onNotice(t("workshop.saved", { path }));
     } catch (error) {
-      onNotice(toTuxError(error).message);
+      const failure = toTuxError(error);
+      // Deux profils pour le même build portent le même nom : on ne remplace
+      // jamais le travail d'un autre sans le demander.
+      if (failure.kind === "profile_exists" && !overwrite) {
+        if (await askConfirmation(t("workshop.overwrite"))) {
+          await save(true);
+        }
+        return;
+      }
+      onNotice(failure.message);
     }
   };
 

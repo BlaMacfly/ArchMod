@@ -237,5 +237,8 @@
   "script.warning": "Çalışan oyunu değiştirir. Önce kaydet.",
   "script.done": "Betik çalıştırıldı: {count} sembol yayımlandı, kod {address} adresinde.",
   "script.reverted": "Betik geri alındı, özgün kod geri yüklendi.",
-  "script.nothing": "Etkin bir betik yoktu."
+  "script.nothing": "Etkin bir betik yoktu.",
+  "main.otherFormats": "Cheat Engine .CT tablosu Atölye sekmesinden, ArchMod .json profili ise Panel sekmesinden içe aktarılır.",
+  "workshop.overwrite": "Bu yapı için zaten bir profil var. Üzerine yazılsın mı?",
+  "panel.editInWorkshop": "Atölyede aç"
 }

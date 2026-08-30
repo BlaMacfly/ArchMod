@@ -237,5 +237,8 @@
   "script.warning": "会修改正在运行的游戏。请先存档。",
   "script.done": "脚本已运行：发布 {count} 个符号，代码位于 {address}。",
   "script.reverted": "脚本已撤销，原始代码已恢复。",
-  "script.nothing": "没有正在生效的脚本。"
+  "script.nothing": "没有正在生效的脚本。",
+  "main.otherFormats": "Cheat Engine 的 .CT 表在「工坊」标签中导入，ArchMod 的 .json 配置文件在「面板」标签中导入。",
+  "workshop.overwrite": "该版本已存在配置文件。要覆盖吗？",
+  "panel.editInWorkshop": "在工坊中打开"
 }
