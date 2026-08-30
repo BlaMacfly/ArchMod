@@ -216,5 +216,17 @@
   "scanner.narrow": "Mostrando {shown} de {total} — refine para ver todos.",
   "scanner.noResult": "Nenhum resultado. Confira o tipo de valor ou tente outro filtro.",
   "scanner.needsValue": "Digite um número para este filtro.",
-  "scanner.pointerNote": "Um endereço encontrado no heap só vale para esta sessão. Transformá-lo em perfil compartilhável exigiria uma busca de ponteiros, que ainda não existe."
+  "scanner.pointerNote": "Um endereço encontrado no heap só vale para esta sessão. Transformá-lo em perfil compartilhável exigiria uma busca de ponteiros, que ainda não existe.",
+  "pointer.hunt": "Procurar um caminho de ponteiros",
+  "pointer.hunting": "Seguindo os ponteiros a partir de {address} — toda a memória é varrida, leva alguns segundos.",
+  "pointer.title": "Caminhos de ponteiros até {address}",
+  "pointer.summary": "{count} caminhos entre {pointers} ponteiros, em {ms} ms",
+  "pointer.none": "Nenhum caminho estático encontrado. Tente outro candidato, ou o valor só é alcançável por uma cadeia mais longa.",
+  "pointer.levels": "{count} níveis",
+  "pointer.adopt": "Adicionar ao perfil",
+  "pointer.adopted": "Caminho adicionado ao perfil da oficina.",
+  "pointer.mismatch": "Este caminho não leva mais ao mesmo endereço — descarte-o.",
+  "pointer.verifyNote": "Caminhos curtos são mais robustos: atravessam menos estruturas que uma atualização poderia mudar. Cada caminho é reexecutado e verificado antes de ser adicionado.",
+  "pointer.foundCategory": "Encontrado",
+  "pointer.foundName": "Valor"
 }

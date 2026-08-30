@@ -216,5 +216,17 @@
   "scanner.narrow": "Mostrando {shown} de {total} — afina para verlos todos.",
   "scanner.noResult": "Ningún resultado. Comprueba el tipo de valor o prueba otro filtro.",
   "scanner.needsValue": "Introduce un número para este filtro.",
-  "scanner.pointerNote": "Una dirección hallada en el montón solo vale para esta sesión. Convertirla en un perfil compartible exigiría una búsqueda de punteros, que aún no existe."
+  "scanner.pointerNote": "Una dirección hallada en el montón solo vale para esta sesión. Convertirla en un perfil compartible exigiría una búsqueda de punteros, que aún no existe.",
+  "pointer.hunt": "Buscar una ruta de punteros",
+  "pointer.hunting": "Siguiendo los punteros desde {address} — se recorre toda la memoria, tarda unos segundos.",
+  "pointer.title": "Rutas de punteros hacia {address}",
+  "pointer.summary": "{count} rutas entre {pointers} punteros, en {ms} ms",
+  "pointer.none": "No se ha encontrado ninguna ruta estática. Prueba con otro candidato, o el valor solo es alcanzable por una cadena más larga.",
+  "pointer.levels": "{count} niveles",
+  "pointer.adopt": "Añadir al perfil",
+  "pointer.adopted": "Ruta añadida al perfil del taller.",
+  "pointer.mismatch": "Esta ruta ya no lleva a la misma dirección — descártala.",
+  "pointer.verifyNote": "Las rutas cortas son más robustas: atraviesan menos estructuras que una actualización podría cambiar. Cada ruta se vuelve a resolver y verificar antes de añadirse.",
+  "pointer.foundCategory": "Encontrado",
+  "pointer.foundName": "Valor"
 }

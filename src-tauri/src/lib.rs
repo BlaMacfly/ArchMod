@@ -12,6 +12,7 @@ pub mod hook;
 mod injector;
 /// Exposé pour les outils de diagnostic (`cargo run --example ...`).
 pub mod memory;
+pub mod pointer;
 mod prefix;
 pub mod profile;
 mod proton;
@@ -32,6 +33,7 @@ use tokio::sync::Mutex;
 use banners::BannerKind;
 use error::{ErrorReport, Result};
 use injector::{Dependencies, LaunchOutcome, LaunchPlan, RunningTrainer, TrainerRegistry};
+use pointer::{PointerPath, PointerScanReport, ScanOptions};
 use prefix::{Component, PrefixReport};
 use profile::{BuildMatch, Profile};
 use scanner::{CandidateView, Filter, ScanReport, Scanner};
@@ -503,6 +505,69 @@ async fn scan_freeze(
     }
 }
 
+/// Cherche par quel chemin de pointeurs une adresse volatile est atteinte.
+///
+/// C'est l'opération qui transforme une trouvaille éphémère en profil : sans
+/// elle, une adresse du tas ne vaut que pour la session en cours.
+#[tauri::command]
+async fn pointer_scan(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+    address: u64,
+    options: Option<ScanOptions>,
+) -> Result<PointerScanReport> {
+    let game = state.game(app_id).await?;
+    let pid = injector::game_process(&game).ok_or(error::TuxError::GameNotRunning {
+        name: game.name.clone(),
+    })?;
+    let options = options.unwrap_or_default();
+
+    injector::log(
+        &app,
+        Some(app_id),
+        injector::LogLevel::Info,
+        format!(
+            "Recherche de pointeurs vers {address:#x} (profondeur {}, décalage max {:#x})…",
+            options.max_depth, options.max_offset
+        ),
+    );
+
+    // Le balayage complet de la mémoire dure plusieurs secondes : on le confie
+    // à un fil dédié pour ne pas figer l'interface.
+    let report = tokio::task::spawn_blocking(move || pointer::scan(pid, address, options))
+        .await
+        .map_err(|error| error::TuxError::Internal(error.to_string()))??;
+
+    injector::log(
+        &app,
+        Some(app_id),
+        if report.paths.is_empty() {
+            injector::LogLevel::Warn
+        } else {
+            injector::LogLevel::Success
+        },
+        format!(
+            "{} chemin(s) trouvé(s) parmi {} pointeurs, en {} ms.",
+            report.paths.len(),
+            report.pointers,
+            report.elapsed_ms
+        ),
+    );
+    Ok(report)
+}
+
+/// Rejoue un chemin et retourne l'adresse atteinte — la vérification qui
+/// distingue un chemin fiable d'une coïncidence.
+#[tauri::command]
+async fn pointer_verify(state: State<'_, AppState>, app_id: u32, path: PointerPath) -> Result<u64> {
+    let game = state.game(app_id).await?;
+    let pid = injector::game_process(&game).ok_or(error::TuxError::GameNotRunning {
+        name: game.name.clone(),
+    })?;
+    pointer::resolve(pid, &path)
+}
+
 /// Un profil disponible pour un jeu, avec sa pertinence pour le build installé.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -749,6 +814,8 @@ pub fn run() {
             refresh_values,
             deactivate_profile,
             probe_recipe,
+            pointer_scan,
+            pointer_verify,
             scan_start,
             scan_next,
             scan_refresh,

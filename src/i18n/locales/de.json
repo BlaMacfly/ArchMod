@@ -216,5 +216,17 @@
   "scanner.narrow": "{shown} von {total} angezeigt — grenze weiter ein, um alle zu sehen.",
   "scanner.noResult": "Kein Treffer. Prüfe den Werttyp oder probiere einen anderen Filter.",
   "scanner.needsValue": "Gib für diesen Filter eine Zahl ein.",
-  "scanner.pointerNote": "Eine im Heap gefundene Adresse gilt nur für diese Sitzung. Für ein teilbares Profil bräuchte es eine Zeigersuche, die es noch nicht gibt."
+  "scanner.pointerNote": "Eine im Heap gefundene Adresse gilt nur für diese Sitzung. Für ein teilbares Profil bräuchte es eine Zeigersuche, die es noch nicht gibt.",
+  "pointer.hunt": "Zeigerpfad suchen",
+  "pointer.hunting": "Zeiger werden ab {address} zurückverfolgt — der gesamte Speicher wird durchsucht, das dauert einige Sekunden.",
+  "pointer.title": "Zeigerpfade zu {address}",
+  "pointer.summary": "{count} Pfade unter {pointers} Zeigern, in {ms} ms",
+  "pointer.none": "Kein statischer Pfad gefunden. Versuche es mit einem anderen Kandidaten, oder der Wert ist nur über eine längere Kette erreichbar.",
+  "pointer.levels": "{count} Ebenen",
+  "pointer.adopt": "Zum Profil hinzufügen",
+  "pointer.adopted": "Pfad zum Werkstatt-Profil hinzugefügt.",
+  "pointer.mismatch": "Dieser Pfad führt nicht mehr zur selben Adresse — verwirf ihn.",
+  "pointer.verifyNote": "Kürzere Pfade sind robuster: sie durchqueren weniger Strukturen, die ein Update ändern könnte. Jeder Pfad wird vor dem Hinzufügen erneut aufgelöst und geprüft.",
+  "pointer.foundCategory": "Gefunden",
+  "pointer.foundName": "Wert"
 }

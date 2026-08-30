@@ -228,7 +228,14 @@ export function MainView({
           <PanneauSection game={game} trainer={trainer} onNotice={onNotice} />
         )}
 
-        {tab === "scanner" && <Scanner game={game} onNotice={onNotice} />}
+        {tab === "scanner" && (
+          <Scanner
+            game={game}
+            draft={trainer.draft}
+            onDraftChange={trainer.setDraft}
+            onNotice={onNotice}
+          />
+        )}
 
         {tab === "atelier" && trainer.draft && (
           <Workshop

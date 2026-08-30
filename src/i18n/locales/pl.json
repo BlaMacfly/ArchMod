@@ -216,5 +216,17 @@
   "scanner.narrow": "Pokazano {shown} z {total} — zawęź, aby zobaczyć wszystkie.",
   "scanner.noResult": "Brak wyników. Sprawdź typ wartości albo spróbuj innego filtra.",
   "scanner.needsValue": "Podaj liczbę dla tego filtra.",
-  "scanner.pointerNote": "Adres znaleziony na stercie obowiązuje tylko w tej sesji. Zrobienie z niego profilu wymagałoby skanowania wskaźników, którego jeszcze nie ma."
+  "scanner.pointerNote": "Adres znaleziony na stercie obowiązuje tylko w tej sesji. Zrobienie z niego profilu wymagałoby skanowania wskaźników, którego jeszcze nie ma.",
+  "pointer.hunt": "Znajdź ścieżkę wskaźników",
+  "pointer.hunting": "Śledzenie wskaźników wstecz od {address} — przeszukiwana jest cała pamięć, potrwa kilka sekund.",
+  "pointer.title": "Ścieżki wskaźników do {address}",
+  "pointer.summary": "{count} ścieżek wśród {pointers} wskaźników, w {ms} ms",
+  "pointer.none": "Nie znaleziono ścieżki statycznej. Spróbuj z innego kandydata albo wartość jest osiągalna tylko dłuższym łańcuchem.",
+  "pointer.levels": "poziomów: {count}",
+  "pointer.adopt": "Dodaj do profilu",
+  "pointer.adopted": "Ścieżka dodana do profilu w warsztacie.",
+  "pointer.mismatch": "Ta ścieżka nie prowadzi już pod ten sam adres — odrzuć ją.",
+  "pointer.verifyNote": "Krótsze ścieżki są pewniejsze: przechodzą przez mniej struktur, które aktualizacja mogłaby zmienić. Każda ścieżka jest odtwarzana i sprawdzana przed dodaniem.",
+  "pointer.foundCategory": "Znalezione",
+  "pointer.foundName": "Wartość"
 }

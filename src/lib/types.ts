@@ -273,3 +273,26 @@ export interface ScanReport {
   truncated: boolean;
   sample: CandidateView[];
 }
+
+// --- Recherche de pointeurs ------------------------------------------------
+
+export interface PointerPath {
+  module: string;
+  baseOffset: number;
+  offsets: number[];
+  resolved: number;
+}
+
+export interface PointerScanReport {
+  target: number;
+  paths: PointerPath[];
+  pointers: number;
+  elapsedMs: number;
+  truncated: boolean;
+}
+
+export interface PointerScanOptions {
+  maxDepth: number;
+  maxOffset: number;
+  maxResults: number;
+}

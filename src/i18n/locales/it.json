@@ -216,5 +216,17 @@
   "scanner.narrow": "Mostrati {shown} su {total} — restringi per vederli tutti.",
   "scanner.noResult": "Nessun risultato. Controlla il tipo di valore, o prova un altro filtro.",
   "scanner.needsValue": "Inserisci un numero per questo filtro.",
-  "scanner.pointerNote": "Un indirizzo trovato nell'heap vale solo per questa sessione. Trasformarlo in un profilo condivisibile richiederebbe una ricerca di puntatori, che non esiste ancora."
+  "scanner.pointerNote": "Un indirizzo trovato nell'heap vale solo per questa sessione. Trasformarlo in un profilo condivisibile richiederebbe una ricerca di puntatori, che non esiste ancora.",
+  "pointer.hunt": "Cerca un percorso di puntatori",
+  "pointer.hunting": "Risalita dei puntatori da {address} — viene esaminata tutta la memoria, richiede qualche secondo.",
+  "pointer.title": "Percorsi di puntatori verso {address}",
+  "pointer.summary": "{count} percorsi fra {pointers} puntatori, in {ms} ms",
+  "pointer.none": "Nessun percorso statico trovato. Riprova da un altro candidato, oppure il valore è raggiungibile solo con una catena più lunga.",
+  "pointer.levels": "{count} livelli",
+  "pointer.adopt": "Aggiungi al profilo",
+  "pointer.adopted": "Percorso aggiunto al profilo dell'officina.",
+  "pointer.mismatch": "Questo percorso non porta più allo stesso indirizzo — scartalo.",
+  "pointer.verifyNote": "I percorsi corti sono più robusti: attraversano meno strutture che un aggiornamento potrebbe cambiare. Ogni percorso viene rieseguito e verificato prima di essere aggiunto.",
+  "pointer.foundCategory": "Trovato",
+  "pointer.foundName": "Valore"
 }

@@ -17,6 +17,9 @@ import type {
   OptionStatus,
   PrefixComponent,
   PrefixReport,
+  PointerPath,
+  PointerScanOptions,
+  PointerScanReport,
   Profile,
   ProfileEntry,
   ScanReport,
@@ -102,6 +105,12 @@ export const api = {
     call<boolean>("deactivate_profile", { appId }),
   probeRecipe: (appId: number, recipe: AddressRecipe, valueType: ValueTypeRef) =>
     call<OptionStatus>("probe_recipe", { appId, recipe, valueType }),
+  // Recherche de pointeurs
+  pointerScan: (appId: number, address: number, options?: PointerScanOptions) =>
+    call<PointerScanReport>("pointer_scan", { appId, address, options: options ?? null }),
+  pointerVerify: (appId: number, path: PointerPath) =>
+    call<number>("pointer_verify", { appId, path }),
+
   // Recherche de valeurs
   scanStart: (appId: number, valueType: ValueTypeRef, filter: Filter) =>
     call<ScanReport>("scan_start", { appId, valueType, filter }),
@@ -139,6 +148,16 @@ export function makeValue(kind: ValueTypeRef["kind"], number: number): Value | n
     default:
       return null;
   }
+}
+
+/** Écriture d'un chemin de pointeurs façon Cheat Engine. */
+export function formatPointerPath(path: PointerPath): string {
+  let text = `[${path.module}+${path.baseOffset.toString(16).toUpperCase()}]`;
+  path.offsets.forEach((offset, index) => {
+    const hex = offset.toString(16).toUpperCase();
+    text = index + 1 === path.offsets.length ? `${text}+${hex}` : `[${text}+${hex}]`;
+  });
+  return text;
 }
 
 /** Adresse en hexadécimal, telle qu'on l'écrit dans un éditeur mémoire. */

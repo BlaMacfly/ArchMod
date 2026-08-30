@@ -216,5 +216,17 @@
   "scanner.narrow": "{total} sonuçtan {shown} tanesi gösteriliyor — hepsini görmek için daralt.",
   "scanner.noResult": "Sonuç yok. Değer türünü kontrol et ya da başka bir süzgeç dene.",
   "scanner.needsValue": "Bu süzgeç için bir sayı gir.",
-  "scanner.pointerNote": "Yığında bulunan bir adres yalnızca bu oturum için geçerlidir. Paylaşılabilir bir profile dönüştürmek için henüz bulunmayan bir işaretçi taraması gerekir."
+  "scanner.pointerNote": "Yığında bulunan bir adres yalnızca bu oturum için geçerlidir. Paylaşılabilir bir profile dönüştürmek için henüz bulunmayan bir işaretçi taraması gerekir.",
+  "pointer.hunt": "İşaretçi yolu ara",
+  "pointer.hunting": "{address} adresinden geriye doğru işaretçiler izleniyor — tüm bellek taranıyor, birkaç saniye sürer.",
+  "pointer.title": "{address} adresine giden işaretçi yolları",
+  "pointer.summary": "{pointers} işaretçi içinde {count} yol, {ms} ms",
+  "pointer.none": "Statik bir yol bulunamadı. Başka bir adayla dene, ya da değere yalnızca daha uzun bir zincirle ulaşılıyor olabilir.",
+  "pointer.levels": "{count} seviye",
+  "pointer.adopt": "Profile ekle",
+  "pointer.adopted": "Yol, atölyedeki profile eklendi.",
+  "pointer.mismatch": "Bu yol artık aynı adrese çıkmıyor — bir kenara bırak.",
+  "pointer.verifyNote": "Kısa yollar daha sağlamdır: bir güncellemenin değiştirebileceği daha az yapıdan geçerler. Her yol eklenmeden önce yeniden çözülüp doğrulanır.",
+  "pointer.foundCategory": "Bulundu",
+  "pointer.foundName": "Değer"
 }

@@ -216,5 +216,17 @@
   "scanner.narrow": "Showing {shown} of {total} — narrow further to see them all.",
   "scanner.noResult": "No match. Check the value type, or try another filter.",
   "scanner.needsValue": "Enter a number for this filter.",
-  "scanner.pointerNote": "An address found in the heap only holds for this session. Turning it into a shareable profile would need a pointer scan, which is not implemented yet."
+  "scanner.pointerNote": "An address found in the heap only holds for this session. Turning it into a shareable profile would need a pointer scan, which is not implemented yet.",
+  "pointer.hunt": "Find a pointer path",
+  "pointer.hunting": "Following pointers back from {address} — this scans the whole memory, allow a few seconds.",
+  "pointer.title": "Pointer paths to {address}",
+  "pointer.summary": "{count} paths among {pointers} pointers, in {ms} ms",
+  "pointer.none": "No static path found. Try again from another candidate, or the value may only be reachable through a longer chain.",
+  "pointer.levels": "{count} levels",
+  "pointer.adopt": "Add to the profile",
+  "pointer.adopted": "Path added to the workshop profile.",
+  "pointer.mismatch": "This path no longer leads to the same address — discard it.",
+  "pointer.verifyNote": "Shorter paths are more robust: they cross fewer structures that a game update could change. Each path is replayed and verified before being added.",
+  "pointer.foundCategory": "Found",
+  "pointer.foundName": "Value"
 }

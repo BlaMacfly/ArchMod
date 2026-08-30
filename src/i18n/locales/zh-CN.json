@@ -216,5 +216,17 @@
   "scanner.narrow": "显示 {shown} / {total} 条 — 继续缩小范围以查看全部。",
   "scanner.noResult": "没有结果。请检查数值类型，或换一个筛选条件。",
   "scanner.needsValue": "请为该筛选条件输入一个数字。",
-  "scanner.pointerNote": "在堆中找到的地址只对本次运行有效。要做成可分享的配置文件，需要指针扫描，该功能尚未实现。"
+  "scanner.pointerNote": "在堆中找到的地址只对本次运行有效。要做成可分享的配置文件，需要指针扫描，该功能尚未实现。",
+  "pointer.hunt": "查找指针路径",
+  "pointer.hunting": "正从 {address} 反向追踪指针 —— 需要扫描整个内存，请等待几秒。",
+  "pointer.title": "指向 {address} 的指针路径",
+  "pointer.summary": "在 {pointers} 个指针中找到 {count} 条路径，用时 {ms} 毫秒",
+  "pointer.none": "未找到静态路径。可以换一个候选地址重试，或者该值只能通过更长的链条到达。",
+  "pointer.levels": "{count} 层",
+  "pointer.adopt": "添加到配置文件",
+  "pointer.adopted": "路径已添加到工坊的配置文件。",
+  "pointer.mismatch": "该路径已不再指向同一地址 —— 请舍弃它。",
+  "pointer.verifyNote": "越短的路径越可靠：它经过的结构更少，被游戏更新改变的风险更小。每条路径在添加前都会重新解析并验证。",
+  "pointer.foundCategory": "已找到",
+  "pointer.foundName": "数值"
 }

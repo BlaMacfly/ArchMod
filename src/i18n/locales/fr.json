@@ -216,5 +216,17 @@
   "scanner.narrow": "{shown} affichés sur {total} — affine pour tous les voir.",
   "scanner.noResult": "Aucun résultat. Vérifie le type de valeur, ou essaie un autre filtre.",
   "scanner.needsValue": "Saisis un nombre pour ce filtre.",
-  "scanner.pointerNote": "Une adresse trouvée dans le tas ne vaut que pour cette session. En faire un profil partageable demanderait une recherche de pointeurs, qui n'existe pas encore."
+  "scanner.pointerNote": "Une adresse trouvée dans le tas ne vaut que pour cette session. En faire un profil partageable demanderait une recherche de pointeurs, qui n'existe pas encore.",
+  "pointer.hunt": "Chercher un chemin de pointeurs",
+  "pointer.hunting": "Remontée des pointeurs depuis {address} — la mémoire entière est balayée, compte quelques secondes.",
+  "pointer.title": "Chemins de pointeurs vers {address}",
+  "pointer.summary": "{count} chemins parmi {pointers} pointeurs, en {ms} ms",
+  "pointer.none": "Aucun chemin statique trouvé. Réessaie depuis un autre candidat, ou la valeur n'est atteignable que par une chaîne plus longue.",
+  "pointer.levels": "{count} niveaux",
+  "pointer.adopt": "Ajouter au profil",
+  "pointer.adopted": "Chemin ajouté au profil de l'atelier.",
+  "pointer.mismatch": "Ce chemin ne mène plus à la même adresse — écarte-le.",
+  "pointer.verifyNote": "Les chemins courts sont plus robustes : ils traversent moins de structures qu'une mise à jour pourrait changer. Chaque chemin est rejoué et vérifié avant d'être ajouté.",
+  "pointer.foundCategory": "Trouvé",
+  "pointer.foundName": "Valeur"
 }
