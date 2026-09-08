@@ -16,6 +16,7 @@ import {
   toTuxError,
   valueNumber,
 } from "../lib/api";
+import { LaunchGameLink } from "./PlayButton";
 import { useI18n, type TranslationKey } from "../i18n";
 import type {
   CandidateView,
@@ -55,6 +56,9 @@ interface ScannerProps {
   game: GameView;
   /** Profil en construction dans l'atelier, enrichi par les chemins trouvés. */
   draft: Profile | null;
+  /** Un lancement de jeu est en attente de détection du processus. */
+  launching: boolean;
+  onLaunchGame: () => void;
   onDraftChange: (profile: Profile) => void;
   onNotice: (message: string) => void;
 }
@@ -63,7 +67,14 @@ interface ScannerProps {
  * Recherche de valeurs façon Cheat Engine : on cherche un nombre connu, on le
  * fait varier dans le jeu, on relance — et l'intersection isole l'adresse.
  */
-export function Scanner({ game, draft, onDraftChange, onNotice }: ScannerProps) {
+export function Scanner({
+  game,
+  draft,
+  launching,
+  onLaunchGame,
+  onDraftChange,
+  onNotice,
+}: ScannerProps) {
   const { t } = useI18n();
   const [valueType, setValueType] = useState<ValueTypeKind>("fourBytes");
   const [filterKind, setFilterKind] = useState<FilterKind>("exact");
@@ -212,6 +223,9 @@ export function Scanner({ game, draft, onDraftChange, onNotice }: ScannerProps) 
           {t("panel.gameNotRunning", { game: game.name })}
         </p>
         <p className="mt-1 text-mist-400">{t("panel.gameNotRunningHint")}</p>
+        <div className="mt-3">
+          <LaunchGameLink launching={launching} onLaunch={onLaunchGame} />
+        </div>
       </div>
     );
   }

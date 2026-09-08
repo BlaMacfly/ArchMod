@@ -24,6 +24,7 @@ ArchMod se compose de trois couches, utilisables indépendamment.
 ### 1. Lanceur de trainers Windows — *fonctionnel*
 
 - **Scan de la bibliothèque Steam** — toutes les racines connues (native, `~/.steam/root`, Flatpak), tous les disques déclarés dans `libraryfolders.vdf`, tous les `appmanifest_*.acf`.
+- **Lancement du jeu depuis ArchMod** — l'URL part vers le client Steam qui possède réellement le jeu, si bien qu'un Steam natif et un Steam Flatpak peuvent cohabiter sans que le mauvais ouvre le magasin ; une surveillance en fond signale ensuite le jeu comme lancé.
 - **Coffre de trainers** — chaque AppID est associé à un `.exe` (FLiNG, MrAntiFun, Cheat Happens…) dans `~/.config/ArchMod/config.json`.
 - **Injection dans le préfixe Proton** — `protontricks`, avec deux replis natifs s'il est absent.
 - **Préparation du préfixe** — diagnostic de ce qui manque pour qu'un trainer démarre (.NET contre Wine-Mono, version de Windows déclarée, variante de Proton) et installation en un clic.
@@ -230,6 +231,7 @@ Cheat Happens — ou une table Cheat Engine.
 | « Aucun préfixe Proton » | Le jeu n'a jamais été lancé via Steam : le préfixe n'existe pas encore. |
 | « Dépendance manquante : protontricks » | `sudo pacman -S protontricks`, ou passe le backend sur *Proton natif* dans les réglages. |
 | Le trainer démarre mais ne s'accroche pas | Lance le jeu **avant** le trainer ; certains trainers exigent aussi que la partie soit chargée. |
+| « Jouer » ouvre le magasin Steam au lieu du jeu | L'AppID est parti vers un client Steam qui ne possède pas cette bibliothèque. `cargo run --example launch_plan` affiche, jeu par jeu, le client retenu par ArchMod. |
 | Aucune jaquette | Cache Steam vide et téléchargement désactivé : réactive « Télécharger les jaquettes » dans les réglages. |
 | Bibliothèque vide | Steam installé mais aucun jeu, ou jeux sur un disque non déclaré dans `libraryfolders.vdf`. |
 

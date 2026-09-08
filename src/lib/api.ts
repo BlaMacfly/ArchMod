@@ -10,6 +10,9 @@ import type {
   AppPaths,
   BannerKind,
   Dependencies,
+  GameLaunchOutcome,
+  GameLaunchPlan,
+  GameStateEvent,
   LaunchOutcome,
   LaunchPlan,
   LibrarySnapshot,
@@ -35,6 +38,7 @@ import type {
 
 export const EVENT_LOG = "archmod://log";
 export const EVENT_TRAINER_STATE = "archmod://trainer-state";
+export const EVENT_GAME_STATE = "archmod://game-state";
 
 /** Vrai si l'objet a la forme d'une `TuxError` sérialisée par le backend. */
 export function isTuxError(value: unknown): value is TuxError {
@@ -80,6 +84,9 @@ export const api = {
   launchTrainer: (appId: number, force: boolean) =>
     call<LaunchOutcome>("launch_trainer", { appId, force }),
   stopTrainer: (appId: number) => call<boolean>("stop_trainer", { appId }),
+  launchGame: (appId: number) => call<GameLaunchOutcome>("launch_game", { appId }),
+  previewGameCommand: (appId: number) =>
+    call<GameLaunchPlan>("preview_game_command", { appId }),
   runningTrainers: () => call<RunningTrainer[]>("running_trainers"),
   checkDependencies: () => call<Dependencies>("check_dependencies"),
   appPaths: () => call<AppPaths>("app_paths"),
@@ -182,6 +189,12 @@ export function onTrainerState(
   return listen<TrainerStateEvent>(EVENT_TRAINER_STATE, (event) =>
     handler(event.payload),
   );
+}
+
+export function onGameState(
+  handler: (state: GameStateEvent) => void,
+): Promise<UnlistenFn> {
+  return listen<GameStateEvent>(EVENT_GAME_STATE, (event) => handler(event.payload));
 }
 
 /** Reconstitue la ligne de commande, quotée comme côté Rust. */

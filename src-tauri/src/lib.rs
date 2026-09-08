@@ -11,6 +11,7 @@ pub mod engine;
 mod error;
 pub mod hook;
 mod injector;
+mod launcher;
 /// Exposé pour les outils de diagnostic (`cargo run --example ...`).
 pub mod memory;
 pub mod pointer;
@@ -35,6 +36,7 @@ use tokio::sync::Mutex;
 use banners::BannerKind;
 use error::{ErrorReport, Result};
 use injector::{Dependencies, LaunchOutcome, LaunchPlan, RunningTrainer, TrainerRegistry};
+use launcher::{GameLaunchOutcome, GameLaunchPlan};
 use pointer::{PointerPath, PointerScanReport, ScanOptions};
 use prefix::{Component, PrefixReport};
 use profile::{BuildMatch, Profile};
@@ -355,6 +357,24 @@ async fn launch_trainer(
         }
     }
     Ok(outcome)
+}
+
+/// Lance le jeu lui-même via son client Steam, sans quitter ArchMod.
+#[tauri::command]
+async fn launch_game(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    app_id: u32,
+) -> Result<GameLaunchOutcome> {
+    let game = state.game(app_id).await?;
+    launcher::launch(app, game).await
+}
+
+/// Commande de lancement du jeu, sans rien exécuter.
+#[tauri::command]
+async fn preview_game_command(state: State<'_, AppState>, app_id: u32) -> Result<GameLaunchPlan> {
+    let game = state.game(app_id).await?;
+    launcher::plan(&game)
 }
 
 #[tauri::command]
@@ -860,6 +880,10 @@ pub fn scan_games_for_diagnostics() -> Result<Vec<SteamGame>> {
     steam_scanner::scan_games()
 }
 
+pub fn launch_plan_for_diagnostics(game: &SteamGame) -> Result<GameLaunchPlan> {
+    launcher::plan(game)
+}
+
 pub fn run_state_for_diagnostics(game: &SteamGame) -> injector::GameRunState {
     injector::game_run_state(game)
 }
@@ -907,6 +931,8 @@ pub fn run() {
             repair_config,
             preview_command,
             launch_trainer,
+            launch_game,
+            preview_game_command,
             stop_trainer,
             running_trainers,
             check_dependencies,

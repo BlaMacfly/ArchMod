@@ -36,6 +36,8 @@ export default function App() {
     loading,
     scan,
     patchGame,
+    launching,
+    startGame,
   } = useLibrary(noticeFromEvent);
 
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
@@ -153,6 +155,14 @@ export default function App() {
       reportError(caught);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const playGame = async (appId: number) => {
+    try {
+      await startGame(appId);
+    } catch (caught) {
+      reportError(caught);
     }
   };
 
@@ -301,9 +311,11 @@ export default function App() {
           game={selected}
           dependencies={dependencies}
           busy={busy}
+          launchingGame={launching === selected?.appId}
           onImportTrainer={() => void importTrainer()}
           onRemoveTrainer={() => void removeTrainer()}
           onLaunch={() => selected && void launch(selected.appId, false)}
+          onLaunchGame={() => selected && void playGame(selected.appId)}
           onStop={() => selected && void stop(selected.appId)}
           onNotice={showNotice}
         />

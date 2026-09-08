@@ -18,6 +18,7 @@ Safe on a running game: they never write to its memory.
 | `table_demo` | Parses a table, runs its scans and resolves its entries, end to end |
 | `hook_plan` | Says what detouring an instruction would require: stolen instructions, resume point, suitable caves, blockers — **without writing anything** |
 | `chemin` | Pointer path search from an address, each path replayed and verified |
+| `launch_plan` | Prints, for every installed game, the exact command ArchMod would hand to Steam to start it — and which Steam client it picked |
 
 ## Writes to the game
 

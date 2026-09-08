@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, onTrainerState } from "../lib/api";
+import { api, onGameState, onTrainerState } from "../lib/api";
 import type { GameView, TuxError } from "../lib/types";
 
 const STATUS_POLL_MS = 4000;
@@ -14,6 +14,8 @@ export function useLibrary(onEvent?: (message: string) => void) {
   const [configError, setConfigError] = useState<TuxError | null>(null);
   const [error, setError] = useState<TuxError | null>(null);
   const [loading, setLoading] = useState(true);
+  /** AppID dont on attend l'apparition après un lancement depuis ArchMod. */
+  const [launching, setLaunching] = useState<number | null>(null);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -92,6 +94,55 @@ export function useLibrary(onEvent?: (message: string) => void) {
     };
   }, [onEvent]);
 
+  // Suivi du démarrage d'un jeu lancé depuis ArchMod. Steam rend la main tout
+  // de suite : c'est cet évènement, et non le retour de la commande, qui dit
+  // que le jeu est réellement là.
+  useEffect(() => {
+    const unlisten = onGameState((state) => {
+      // La phase « starting » est déjà annoncée par le retour de la commande :
+      // la répéter ferait deux lignes identiques dans la console.
+      if (state.phase === "starting") return;
+
+      setLaunching((current) => (current === state.appId ? null : current));
+      if (state.phase === "running") {
+        setGames((previous) =>
+          previous.map((game) =>
+            game.appId === state.appId ? { ...game, running: true } : game,
+          ),
+        );
+      }
+      onEvent?.(state.message);
+    });
+    return () => {
+      unlisten.then((stop) => stop()).catch(() => undefined);
+    };
+  }, [onEvent]);
+
+  /** Demande à Steam de lancer le jeu ; la surveillance se fait par évènement. */
+  const startGame = useCallback(
+    async (appId: number) => {
+      setLaunching(appId);
+      try {
+        const outcome = await api.launchGame(appId);
+        onEvent?.(outcome.message);
+        if (outcome.alreadyRunning) {
+          setGames((previous) =>
+            previous.map((game) =>
+              game.appId === appId ? { ...game, running: true } : game,
+            ),
+          );
+        }
+        // Rien à surveiller si la commande n'a pas été transmise.
+        if (!outcome.started) setLaunching(null);
+        return outcome;
+      } catch (caught) {
+        setLaunching(null);
+        throw caught;
+      }
+    },
+    [onEvent],
+  );
+
   /** Applique une mise à jour locale (import/retrait de trainer). */
   const patchGame = useCallback((appId: number, patch: Partial<GameView>) => {
     setGames((previous) =>
@@ -108,5 +159,7 @@ export function useLibrary(onEvent?: (message: string) => void) {
     loading,
     scan,
     patchGame,
+    launching,
+    startGame,
   };
 }

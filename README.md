@@ -24,6 +24,7 @@ ArchMod has three layers, each usable on its own.
 ### 1. Windows trainer launcher — *working*
 
 - **Steam library scan** — every known root (native, `~/.steam/root`, Flatpak), every drive declared in `libraryfolders.vdf`, every `appmanifest_*.acf`.
+- **Launch the game from ArchMod** — the URL goes to the Steam client that actually owns the game, so a native Steam and a Flatpak Steam can coexist without the wrong one opening the store; a background watch then reports the game as running.
 - **Trainer vault** — each AppID is bound to an `.exe` (FLiNG, MrAntiFun, Cheat Happens…) in `~/.config/ArchMod/config.json`.
 - **Injection into the Proton prefix** — `protontricks`, with two native fallbacks when it is absent.
 - **Prefix preparation** — diagnoses what stops a trainer from starting (.NET versus Wine-Mono, the reported Windows version, the Proton flavour) and fixes it in one click.
@@ -217,6 +218,7 @@ A corrupted file is **never** overwritten silently: the interface offers a repai
 | "No Proton prefix" | The game has never run through Steam, so the prefix does not exist yet. |
 | "Missing dependency: protontricks" | `sudo pacman -S protontricks`, or switch the backend to *Native Proton* in the settings. |
 | The trainer starts but does not attach | Start the game **before** the trainer; many trainers also need a save to be loaded. |
+| "Play" opens the Steam store instead of the game | The AppID reached a Steam client that does not own that library. `cargo run --example launch_plan` prints the client ArchMod picked for every game. |
 | No artwork | Steam's cache is empty and downloads are disabled: re-enable "Download missing artwork" in the settings. |
 | Empty library | Steam is installed but has no games, or games sit on a drive missing from `libraryfolders.vdf`. |
 

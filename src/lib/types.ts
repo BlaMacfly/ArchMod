@@ -49,6 +49,33 @@ export interface GameView extends SteamGame {
   trainerRunning: boolean;
 }
 
+export type SteamClient = "native" | "flatpak" | "desktop";
+
+/** Commande qui sera transmise au client Steam pour démarrer le jeu. */
+export interface GameLaunchPlan {
+  client: SteamClient;
+  program: string;
+  args: string[];
+  url: string;
+  note: string;
+}
+
+export interface GameLaunchOutcome {
+  started: boolean;
+  alreadyRunning: boolean;
+  message: string;
+  plan: GameLaunchPlan | null;
+}
+
+export type LaunchPhase = "starting" | "running" | "timeout";
+
+export interface GameStateEvent {
+  appId: number;
+  phase: LaunchPhase;
+  message: string;
+  pids: number[];
+}
+
 export interface LibrarySnapshot {
   games: GameView[];
   steamRoots: string[];

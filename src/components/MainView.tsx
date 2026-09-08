@@ -14,6 +14,7 @@ import {
 import logoUrl from "../assets/logo.png";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
+import { LaunchGameLink, PlayButton } from "./PlayButton";
 import { StatusPill } from "./StatusPill";
 import { PrefixCard } from "./PrefixCard";
 import { Scanner } from "./Scanner";
@@ -30,9 +31,12 @@ interface MainViewProps {
   game: GameView | null;
   dependencies: Dependencies | null;
   busy: boolean;
+  /** Un lancement de jeu est en attente de détection du processus. */
+  launchingGame: boolean;
   onImportTrainer: () => void;
   onRemoveTrainer: () => void;
   onLaunch: () => void;
+  onLaunchGame: () => void;
   onStop: () => void;
   onNotice: (message: string) => void;
 }
@@ -41,9 +45,11 @@ export function MainView({
   game,
   dependencies,
   busy,
+  launchingGame,
   onImportTrainer,
   onRemoveTrainer,
   onLaunch,
+  onLaunchGame,
   onStop,
   onNotice,
 }: MainViewProps) {
@@ -164,6 +170,14 @@ export function MainView({
               {game.name}
             </h1>
           )}
+
+          <div className="ml-auto shrink-0">
+            <PlayButton
+              running={game.running}
+              launching={launchingGame}
+              onLaunch={onLaunchGame}
+            />
+          </div>
         </div>
       </div>
 
@@ -241,6 +255,8 @@ export function MainView({
           <Scanner
             game={game}
             draft={trainer.draft}
+            launching={launchingGame}
+            onLaunchGame={onLaunchGame}
             onDraftChange={trainer.setDraft}
             onNotice={onNotice}
           />
@@ -361,9 +377,10 @@ export function MainView({
         </button>
 
         {!game.running && game.trainer && !game.trainerMissing && (
-          <p className="flex items-center gap-2 text-xs text-warn-500">
+          <p className="flex flex-wrap items-center gap-2 text-xs text-warn-500">
             <AlertTriangle className="h-3.5 w-3.5" />
             {t("main.notRunningWarning")}
+            <LaunchGameLink launching={launchingGame} onLaunch={onLaunchGame} />
           </p>
         )}
 
